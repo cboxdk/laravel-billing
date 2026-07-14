@@ -12,12 +12,13 @@ and must be prototyped before they harden.
 
 ## 1. What this is
 
-`cboxdk/laravel-billing` is the **monetization engine** for the whole cbox
-portfolio — a framework package that drops into any Laravel app, exactly like
-`cboxdk/laravel-id`. `cboxdk/cbox-billing` is the deployable app (admin console +
-customer portal, cboxbilling.com) built on it. Positioning: a **self-hostable
-Chargebee** — Chargebee's feature scope, Lago's delivery model (OSS, self-host or
-hosted), Metronome's real-time metering, and native cbox-id identity/entitlements.
+`cboxdk/laravel-billing` is the **billing engine** for the whole cbox portfolio —
+a framework package that drops into any Laravel app, exactly like `cboxdk/laravel-id`.
+`cboxdk/cbox-billing` is the deployable app (admin console + customer portal,
+cboxbilling.com) built on it. It is a full billing engine — catalog, subscriptions,
+real-time usage metering with hard limits, a double-entry ledger, wallets/credits,
+invoicing, and pricing operations — that is self-hostable, gateway-agnostic, and
+identity-native (org tenancy + entitlements from cbox-id out of the box).
 
 **Division of labor with cbox-id.** ID = *who you are + what you may* (identity,
 sessions, entitlement enforcement). Billing = *what you owe + why* (catalog,
@@ -29,9 +30,9 @@ environment/organization tenancy verbatim.
 
 ## 2. The three-layer architecture (the load-bearing decision)
 
-Market leaders (Orb, OpenMeter) **never** treat their real-time counters as the
-billing source of truth — *"the invoice is computed, not retrieved."* We adopt
-that. Enforcement, metering truth, and money are **three separate concerns**:
+Real-time counters are **never** the billing source of truth: the invoice is
+**computed from the immutable event log**, never read from a counter. Enforcement,
+metering truth, and money are therefore **three separate concerns**:
 
 | Layer | Question it answers | Store | Authority | Loss tolerance |
 | --- | --- | --- | --- | --- |
@@ -42,9 +43,9 @@ that. Enforcement, metering truth, and money are **three separate concerns**:
 **Design stance: accept a small, bounded drift.** We deliberately do NOT do strict
 cross-node atomic hard limits (they'd force a shared/co-located Redis on every app
 deployment — a no-go operationally). Instead the app enforces **locally** and
-eventually reconciles to billing. This matches how Orb/OpenMeter actually run
-(eventually-consistent counters, authoritative billing recomputed from events) and
-removes the hardest, unproven part of the design.
+eventually reconciles to billing: eventually-consistent counters, with
+authoritative billing recomputed from the event log. This removes the hardest,
+unproven part of the design.
 
 ### Topology (hot-path is app-local; async ingest to billing)
 
@@ -205,7 +206,7 @@ billing by up to one drift window — fine for UX/pre-checks, never for accounti
 
 ---
 
-## 6. Pricing, versioning & grandfathering (Kill Bill model)
+## 6. Pricing, versioning & grandfathering
 
 - Prices are **versioned by effective date**; each version supersedes the prior.
 - **New** subscriptions / plan changes use the **most recent** version.
@@ -289,8 +290,9 @@ cbox-id already ships the receiving contract:
 - **`cboxdk/cbox-billing`** — the deployable app (admin + portal), OIDC client of
   cbox-id.
 - Adopt **`brick/money`** (don't build money). Reuse the observability stack
-  (telemetry/health/queue-metrics/autoscale). **Do NOT derive from Lago** — it is
-  **AGPL-3.0**; learn the architecture only.
+  (telemetry/health/queue-metrics/autoscale). Our engine is **MIT** — never copy
+  code from copyleft (AGPL-licensed) billing projects; take only permissively-
+  licensed dependencies.
 
 The **Ledger** stays internal to `laravel-billing` initially (tightly coupled to
 invoicing/wallets); extract `cboxdk/laravel-ledger` later only if a boundary earns it.

@@ -25,7 +25,7 @@ Tests: 12 · assertions: 35.
 2. **Ingest side** — dedup (id+source, bounded window) → immutable event log
    (ClickHouse) so the enforcement loop connects end-to-end; ledger projection.
 3. **Catalog** — `Product`/`Price` (Stripe model) with effective-date versioning
-   + price-pinning/grandfathering (Kill Bill model); plans, addons, allowances.
+   + price-pinning/grandfathering; plans, addons, allowances.
 4. **Subscriptions** — lifecycle, proration policies, scheduled/mutable changes.
 5. **Payments** — `PaymentGateway` contract + Stripe + Mollie adapters + dunning.
 6. **Pricing-ops** — coupons, scheduled increases, overrides/contracts, quotes.

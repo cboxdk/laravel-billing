@@ -1,7 +1,7 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
     "name": "cboxdk/laravel-billing",
-    "description": "Cbox Billing — a self-hostable, gateway-agnostic monetization engine for Laravel: catalog, subscriptions, real-time usage metering with hard limits, a double-entry ledger, invoicing, and pricing operations.",
+    "description": "Cbox Billing — the billing engine for Laravel — a gateway-agnostic library: catalog, subscriptions, real-time usage metering with hard limits, a double-entry ledger, invoicing, and pricing operations.",
     "keywords": ["cbox", "billing", "subscriptions", "metering", "usage-based", "ledger", "invoicing", "laravel"],
     "license": "MIT",
     "require": {

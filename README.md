@@ -1,14 +1,18 @@
 # Cbox Billing
 
-A self-hostable, gateway-agnostic **monetization engine** for Laravel — the
-billing peer to [`cboxdk/laravel-id`](https://github.com/cboxdk/laravel-id).
-Catalog, subscriptions, **real-time usage metering with hard limits**, a
-double-entry ledger, invoicing, and pricing operations. Drop it into any Laravel
-app; the deployable console + portal is the separate `cboxdk/cbox-billing` app.
+**`cboxdk/laravel-billing`** — the billing engine for Laravel: a gateway-agnostic
+library of billing primitives (catalog, subscriptions, **real-time usage metering
+with hard limits**, a double-entry ledger, wallets & credits, invoicing, pricing)
+you compose into a billing product. The framework peer to
+[`cboxdk/laravel-id`](https://github.com/cboxdk/laravel-id) — UI-free and
+domain-free: every capability sits behind a contract you bind, mock or replace.
 
-Positioning: a **self-hostable Chargebee** — Chargebee's feature scope, Lago's
-delivery model (OSS, self-host or hosted), Metronome's real-time metering, and
-native `cbox-id` identity + entitlements.
+> This is the **package**, not the product. The deployable, self-hostable
+> billing app built on it — with an admin console and customer portal — is the
+> separate **`cboxdk/cbox-billing`** application (exactly as `cbox-id` is the app
+> built on `laravel-id`). Reach for the app if you don't want to build the
+> UI/hosting layer yourself; reach for this package to embed billing in your own
+> Laravel app.
 
 > **Status: early / pre-1.0.** The architecture is settled — see
 > [`docs/foundation-contracts.md`](docs/foundation-contracts.md), the coherence
@@ -19,7 +23,8 @@ native `cbox-id` identity + entitlements.
 ## The three-layer model (why it's correct)
 
 Real-time enforcement, metering truth, and money are **three separate concerns**
-(the pattern Orb/OpenMeter use — *"the invoice is computed, not retrieved"*):
+— the invoice is **computed from the immutable event log**, never read from a
+counter:
 
 1. **Enforcement** — an app-local counter (Laravel cache, atomic increment/
    decrement, no custom Lua) answering *"may this request proceed?"* in sub-ms.
