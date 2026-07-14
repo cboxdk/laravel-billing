@@ -6,8 +6,9 @@
     "license": "MIT",
     "require": {
         "php": "^8.4",
-        "illuminate/contracts": "^12.0 || ^13.0",
+        "brick/money": "^0.14",
         "illuminate/cache": "^12.0 || ^13.0",
+        "illuminate/contracts": "^12.0 || ^13.0",
         "illuminate/database": "^12.0 || ^13.0",
         "illuminate/support": "^12.0 || ^13.0"
     },
