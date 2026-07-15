@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cbox\Billing;
 
 use Cbox\Billing\Catalog\CatalogServiceProvider;
+use Cbox\Billing\Entitlement\EntitlementServiceProvider;
 use Cbox\Billing\Invoice\InvoiceServiceProvider;
 use Cbox\Billing\Metering\MeteringServiceProvider;
 use Cbox\Billing\Payment\PaymentServiceProvider;
@@ -30,6 +31,7 @@ class BillingServiceProvider extends ServiceProvider
         SubscriptionServiceProvider::class,
         PaymentServiceProvider::class,
         PricingServiceProvider::class,
+        EntitlementServiceProvider::class,
     ];
 
     public function register(): void
