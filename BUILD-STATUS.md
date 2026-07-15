@@ -16,8 +16,10 @@ Gate (green on every commit): `pint --test` · `phpstan` level max · `pest` ·
 | **Wallet / credits** | `CreditGrant` (denomination money-or-unit, type, expiry, priority), `CreditConsumer` (pure burn-down: denomination → expiry → priority → age), `ConsumptionPlan`. | ✅ burn-down engine + tests |
 | **Quote / consequence-preview** | `QuoteBuilder` composes **`cboxdk/laravel-tax`** (seller-of-record routing + per-line tax) + wallet credit → a confirmable `Quote` (lines · totals net/tax/gross/credit/dueNow · `TaxResolution`). **Progressive tax resolution**: an unresolved jurisdiction (e.g. US w/o a state) returns a *tax-pending* quote with an honest reason, never a wrong number. Money interop via `Money::toBrick()/fromBrick()`. | ✅ builder + tests (resolved · credit · pending · reverse-charge) |
 | **Catalog** | Stripe-style `Product`/`Price` split; versioned prices with effective-date ranges → **grandfathering** (a subscriber pins the price effective at their start date; new sales get the current version). `PricingModel` (flat · per-unit); `Catalog` contract + `InMemoryCatalog` (newest-effective-version resolution). Feeds pinned prices into the Quote. | ✅ resolution + grandfathering + catalog→quote tests |
+| **Seller (of record)** | `SellerEntity` (legal identity + tax registrations + invoice prefix) → produces the tax engine's seller-registrations; `EntityRouter` + `DefaultEntityRouter` routes a buyer to the entity registered in their country (domestic) else a default (cross-border) — the multi-entity routing that drives tax. | ✅ routing + entity→registrations tests |
+| **Invoice** | `Invoicer` fixes a confirmed `Quote` to a legal number from the entity's own `InvoiceNumberSequence` (per-entity, monotonic, gapless) → `Invoice`. Refuses a tax-pending quote (`CannotInvoicePendingQuote`). | ✅ per-entity numbering + confirm→invoice + refuse-pending + end-to-end |
 
-Tests: 22 · assertions: 69.
+Tests: 27 · assertions: 82.
 
 > **Dependencies:** the Quote module composes `cboxdk/laravel-tax` (`^0.1`) and
 > `cboxdk/laravel-geo` (`^0.4`), both from Packagist.
