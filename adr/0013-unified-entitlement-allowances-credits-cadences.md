@@ -32,6 +32,15 @@ pool, cadence}` where `cadence ∈ {Once, Daily, Monthly, Yearly}`.
 - **Cadences mix.** The cycle scheduler (ADR-0012) tracks a period **per (grant, cadence)**: a
   daily grant resets daily, a monthly grant monthly, a yearly grant yearly — each idempotent
   (`CycleGrants`, ADR-0002) on its own period, all within one subscription.
+- **Per-grant expiry policy → rollover vs reset.** Each grant declares an expiry policy:
+  `EndOfPeriod` (dies at the cadence boundary — no rollover, use-it-or-lose-it),
+  `Duration(d)` (each lot lives `d` from when it was granted — unused **rolls over** and
+  accumulates, each lot expiring on its own timer via lot-attributed expiry, ADR-0006), or
+  `Never`. This composes with pool + cadence to express **multi-tier credits** in one plan —
+  e.g. an `ai` pool granted Monthly with `EndOfPeriod` (monthly credits that don't roll over)
+  **alongside** a `hosting` pool granted Monthly with `Duration(1 year)` (credits that roll
+  over and expire a year after each grant). Rollover is expiry-beyond-the-period, not a
+  separate mechanism.
 - **The hot path stays fast.** The Metering lease (ADR-0005) leases a slice of the **combined
   remaining** spendable balance for a meter (the sum of that meter's spendable pools this
   period); per-request enforcement stays local/atomic, and the lease source derives the
