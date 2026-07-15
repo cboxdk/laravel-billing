@@ -39,14 +39,17 @@ readonly class WebhookEvent
     /**
      * The normalized {@see PaymentResult} this event maps to — the "mapped result" the
      * effect is applied from. A settlement echoes the gateway event id as the reference
-     * for reconciliation; a failure/pending maps to the matching status.
+     * for reconciliation; a failure/pending/processing/requires-action maps to the
+     * matching status. Only the settlement is ever applied by the ingest; the rest are
+     * carried for observation.
      */
     public function toPaymentResult(): PaymentResult
     {
         return match ($this->type) {
             WebhookEventType::PaymentSettled => PaymentResult::succeeded($this->id),
-            WebhookEventType::PaymentPending => PaymentResult::pending($this->id),
+            WebhookEventType::PaymentPending, WebhookEventType::Processing => PaymentResult::pending($this->id),
             WebhookEventType::PaymentFailed => new PaymentResult(PaymentStatus::Failed, $this->id),
+            WebhookEventType::RequiresAction => new PaymentResult(PaymentStatus::RequiresAction, $this->id),
         };
     }
 }

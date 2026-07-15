@@ -95,6 +95,49 @@ it('records but does not apply a non-settlement event, and dedups its re-deliver
         ->and($this->webhookApplier()->isPaid('DK-000002'))->toBeFalse();
 });
 
+it('records but does not apply a requires-action (SCA) event, surfacing it for a prompt', function () {
+    $challenge = new WebhookEvent('evt_ra', WebhookEventType::RequiresAction, 'DK-000003', Money::ofMinor(12500, 'EUR'));
+
+    $first = $this->webhookIngest()->ingest($challenge);
+    $second = $this->webhookIngest()->ingest($challenge); // re-delivery of the same challenge
+
+    expect($first->status)->toBe(WebhookIngestStatus::RequiresAction)
+        ->and($first->requiresCustomerAction())->toBeTrue()
+        ->and($first->wasApplied())->toBeFalse()
+        ->and($second->status)->toBe(WebhookIngestStatus::DuplicateEvent)
+        ->and($this->webhookApplier()->isPaid('DK-000003'))->toBeFalse()
+        ->and($this->webhookSettled()->isSettled('DK-000003'))->toBeFalse();
+});
+
+it('records but does not apply a processing event', function () {
+    $processing = new WebhookEvent('evt_pr', WebhookEventType::Processing, 'DK-000004', Money::ofMinor(12500, 'EUR'));
+
+    $outcome = $this->webhookIngest()->ingest($processing);
+
+    expect($outcome->status)->toBe(WebhookIngestStatus::Processing)
+        ->and($outcome->wasApplied())->toBeFalse()
+        ->and($outcome->requiresCustomerAction())->toBeFalse()
+        ->and($this->webhookApplier()->isPaid('DK-000004'))->toBeFalse();
+});
+
+it('applies exactly once when a requires-action is followed (and re-delivered) then settled', function () {
+    $reference = 'DK-000005';
+    $challenge = new WebhookEvent('evt_ra', WebhookEventType::RequiresAction, $reference, Money::ofMinor(12500, 'EUR'));
+    $settled = settledEvent('evt_ok', $reference);
+
+    // SCA challenge arrives, is re-delivered, then the customer authenticates and the
+    // gateway settles. The paid effect must land exactly once — only on the settlement.
+    $challengeOutcome = $this->webhookIngest()->ingest($challenge);
+    $this->webhookIngest()->ingest($challenge); // re-delivery
+    $settledOutcome = $this->webhookIngest()->ingest($settled);
+    $this->webhookIngest()->ingest($settled); // re-delivery of the settlement
+
+    expect($challengeOutcome->status)->toBe(WebhookIngestStatus::RequiresAction)
+        ->and($settledOutcome->status)->toBe(WebhookIngestStatus::Applied)
+        ->and($this->webhookApplier()->timesPaid($reference))->toBe(1)
+        ->and($this->webhookSettled()->settledCount())->toBe(1);
+});
+
 it('accepts and ingests through a scripted adapter verifier end to end', function () {
     $event = settledEvent('evt_wire', 'DK-000009');
     $verifier = FakeWebhookVerifier::accepting($event);

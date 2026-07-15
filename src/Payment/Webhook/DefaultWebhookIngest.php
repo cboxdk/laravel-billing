@@ -8,6 +8,7 @@ use Cbox\Billing\Payment\Contracts\InvoicePaymentApplier;
 use Cbox\Billing\Payment\Contracts\ProcessedEventStore;
 use Cbox\Billing\Payment\Contracts\SettledPaymentStore;
 use Cbox\Billing\Payment\Contracts\WebhookIngest;
+use Cbox\Billing\Payment\Enums\WebhookEventType;
 use Cbox\Billing\Payment\ValueObjects\IngestOutcome;
 use Cbox\Billing\Payment\ValueObjects\WebhookEvent;
 
@@ -39,11 +40,21 @@ readonly class DefaultWebhookIngest implements WebhookIngest
 
     public function ingest(WebhookEvent $event): IngestOutcome
     {
-        // A non-settlement event carries no effect: dedup it on the event id and return.
+        // A non-settlement event carries no paid effect: dedup it on the event id and
+        // surface its kind so the caller can react. An SCA `RequiresAction` and a
+        // `Processing` notice are recorded/deduped exactly like a failure/pending notice
+        // but reported through their own status — never activated. Only the succeeded
+        // webhook (below) ever moves the invoice; a client-side confirmation never does.
         if (! $event->isSettlement()) {
-            return $this->processed->remember($event->id)
-                ? IngestOutcome::ignored($event)
-                : IngestOutcome::duplicateEvent($event);
+            if (! $this->processed->remember($event->id)) {
+                return IngestOutcome::duplicateEvent($event);
+            }
+
+            return match ($event->type) {
+                WebhookEventType::RequiresAction => IngestOutcome::requiresAction($event),
+                WebhookEventType::Processing => IngestOutcome::processing($event),
+                default => IngestOutcome::ignored($event),
+            };
         }
 
         // The authoritative guard: has this payment/invoice reference already settled?

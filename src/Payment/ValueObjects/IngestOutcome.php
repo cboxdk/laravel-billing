@@ -40,9 +40,28 @@ readonly class IngestOutcome
         return new self(WebhookIngestStatus::Ignored, $event->id, $event->reference);
     }
 
+    public static function requiresAction(WebhookEvent $event): self
+    {
+        return new self(WebhookIngestStatus::RequiresAction, $event->id, $event->reference);
+    }
+
+    public static function processing(WebhookEvent $event): self
+    {
+        return new self(WebhookIngestStatus::Processing, $event->id, $event->reference);
+    }
+
     /** Whether this ingest was the one that applied the paid effect. */
     public function wasApplied(): bool
     {
         return $this->status->applied();
+    }
+
+    /**
+     * Whether this ingest surfaced a live SCA challenge: the caller must prompt the
+     * customer to complete it on the gateway's element. Nothing was applied.
+     */
+    public function requiresCustomerAction(): bool
+    {
+        return $this->status->requiresCustomerAction();
     }
 }
