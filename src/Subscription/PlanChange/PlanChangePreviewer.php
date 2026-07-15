@@ -12,9 +12,11 @@ use Cbox\Billing\Quote\ValueObjects\Quote;
 use Cbox\Billing\Quote\ValueObjects\QuoteContext;
 use Cbox\Billing\Subscription\Contracts\TransitionPolicy;
 use Cbox\Billing\Subscription\Enums\AnchorMode;
+use Cbox\Billing\Subscription\Enums\CreditGrantMode;
 use Cbox\Billing\Subscription\Enums\GatewayRounding;
 use Cbox\Billing\Subscription\PlanChange\Exceptions\TransitionNotAllowed;
 use Cbox\Billing\Subscription\PlanChange\ValueObjects\CreditConsequenceRequest;
+use Cbox\Billing\Subscription\PlanChange\ValueObjects\CreditDelta;
 use Cbox\Billing\Subscription\Proration\Proration;
 use Cbox\Billing\Subscription\Proration\ProrationCalculator;
 use Cbox\Billing\Subscription\Proration\ProrationRequest;
@@ -55,6 +57,7 @@ readonly class PlanChangePreviewer
         string $description = 'Plan change',
         AnchorMode $anchor = AnchorMode::Keep,
         GatewayRounding $rounding = GatewayRounding::HalfUp,
+        CreditGrantMode $creditMode = CreditGrantMode::FullReset,
     ): PlanChangePreview {
         $decision = $this->policy->canTransition($fromPlan, $toPlan);
 
@@ -78,11 +81,38 @@ readonly class PlanChangePreviewer
             newRecurring: $newPrice,
             effectiveAt: $proration->effectiveAt,
             proration: $proration,
-            creditDelta: $this->credit->forSwitch($credit, $decision->carryOver),
+            creditDelta: $this->creditDelta($proration->deferred, $credit, $decision->carryOver, $creditMode, $period, $at),
             irreversibilityWarning: $fromPlan->isLegacy()
                 ? "You are on a legacy plan [{$fromPlan->id}]; changing means you cannot switch back to it."
                 : null,
             guidance: $decision->guidance,
+        );
+    }
+
+    /**
+     * The credit consequence beside the money delta. A deferred downgrade moves no
+     * credits now — the allotment changes at period end — so it reports the eventual
+     * grant without forfeiting; a mid-cycle switch forfeits-and-regrants, honouring the
+     * {@see CreditGrantMode} and proration from the anchored cycle for the prorated mode.
+     */
+    private function creditDelta(
+        bool $deferred,
+        CreditConsequenceRequest $credit,
+        bool $carryOver,
+        CreditGrantMode $creditMode,
+        BillingPeriod $period,
+        DateTimeImmutable $at,
+    ): CreditDelta {
+        if ($deferred) {
+            return $this->credit->forDeferredDowngrade($credit);
+        }
+
+        return $this->credit->forSwitch(
+            $credit,
+            $carryOver,
+            $creditMode,
+            $period->remainingDays($at),
+            $period->totalDays(),
         );
     }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cbox\Billing\Wallet\Enums;
 
 use Cbox\Billing\Wallet\Support\CycleGrants;
+use Cbox\Billing\Wallet\Support\MonthMath;
 use DateInterval;
 use DateTimeImmutable;
 
@@ -112,21 +113,13 @@ enum GrantCadence: string
         };
     }
 
-    /** Add `$months` calendar months to `$start`, clamping to the target month's last day. */
+    /**
+     * Add `$months` calendar months to `$start`, clamping to the target month's last day
+     * via the shared {@see MonthMath::addMonths()} kernel — the same clamp the billing
+     * cycle uses, so grant slices and cycle boundaries never disagree.
+     */
     private function addMonths(DateTimeImmutable $start, int $months): DateTimeImmutable
     {
-        $anchorDay = (int) $start->format('j');
-
-        // Adding months to the first of the month can never overflow into the next
-        // month, so the target year/month is exact.
-        $firstOfMonth = $start->setDate((int) $start->format('Y'), (int) $start->format('n'), 1);
-        $target = $months >= 0
-            ? $firstOfMonth->add(new DateInterval('P'.$months.'M'))
-            : $firstOfMonth->sub(new DateInterval('P'.abs($months).'M'));
-
-        $daysInTarget = (int) $target->format('t');
-        $day = min($anchorDay, $daysInTarget);
-
-        return $target->setDate((int) $target->format('Y'), (int) $target->format('n'), $day);
+        return MonthMath::addMonths($start, $months);
     }
 }
