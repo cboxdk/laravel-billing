@@ -18,6 +18,18 @@ use Cbox\Billing\Money\Money;
  */
 interface Ledger
 {
+    /**
+     * Post a balanced transaction, exactly once.
+     *
+     * **Idempotency key:** the transaction's application-level natural key
+     * {@see LedgerTransaction::postingKey()} — `(org, source, reference)`, or the
+     * degenerate key derived from the transaction id when none is given. A second
+     * post carrying the same key is a **no-op** (never a double-count, never an
+     * error), so a retried or reprocessed post is safe. Per ADR-0002 this dedupe is
+     * enforced in code against a separate, unpartitioned record — never by a UNIQUE
+     * index on the (future time-partitioned) ledger — so partitioning can be
+     * introduced later with no change to the idempotency story.
+     */
     public function post(LedgerTransaction $transaction): void;
 
     /**

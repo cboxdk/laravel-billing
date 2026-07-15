@@ -13,6 +13,12 @@ use Cbox\Billing\Money\Money;
  * double-entry invariant at construction: at least two lines, a single currency,
  * and total debits exactly equal to total credits. An unbalanced or mixed-currency
  * transaction can never exist.
+ *
+ * `key` is the application-level natural key the post is idempotent on (see
+ * ADR-0002): a re-post carrying the same `(org, source, reference)` is a no-op.
+ * When omitted, {@see postingKey()} derives a degenerate key from the transaction
+ * id, so an id-only post is still idempotent. The `id` groups this transaction's
+ * lines in the durable store; it is not the dedupe key.
  */
 readonly class LedgerTransaction
 {
@@ -26,6 +32,7 @@ readonly class LedgerTransaction
         public array $lines,
         public string $memo = '',
         public int $occurredAt = 0,
+        public ?PostingKey $key = null,
     ) {
         if (count($lines) < 2) {
             throw new UnbalancedTransaction('A ledger transaction needs at least two lines.');
@@ -50,5 +57,15 @@ readonly class LedgerTransaction
         if (! $debits->equals($credits)) {
             throw new UnbalancedTransaction("Ledger transaction [{$id}] is unbalanced: debits {$debits} != credits {$credits}.");
         }
+    }
+
+    /**
+     * The natural key this post is deduplicated on: the explicit `key` when given,
+     * otherwise the degenerate key derived from the transaction id. Always returns a
+     * key, so every post claims exactly one unpartitioned dedupe record.
+     */
+    public function postingKey(): PostingKey
+    {
+        return $this->key ?? PostingKey::forTransaction($this->id);
     }
 }
