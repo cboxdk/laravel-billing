@@ -7,6 +7,7 @@ namespace Cbox\Billing;
 use Cbox\Billing\Catalog\CatalogServiceProvider;
 use Cbox\Billing\Invoice\InvoiceServiceProvider;
 use Cbox\Billing\Metering\MeteringServiceProvider;
+use Cbox\Billing\Payment\PaymentServiceProvider;
 use Cbox\Billing\Quote\QuoteServiceProvider;
 use Cbox\Billing\Subscription\SubscriptionServiceProvider;
 use Illuminate\Support\ServiceProvider;
@@ -26,6 +27,7 @@ class BillingServiceProvider extends ServiceProvider
         QuoteServiceProvider::class,
         InvoiceServiceProvider::class,
         SubscriptionServiceProvider::class,
+        PaymentServiceProvider::class,
     ];
 
     public function register(): void
