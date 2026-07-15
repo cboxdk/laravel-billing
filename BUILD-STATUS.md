@@ -11,6 +11,7 @@ Gate (green on every commit): `pint --test` · `phpstan` level max · `pest` ·
 | Module | What | State |
 | --- | --- | --- |
 | **Metering / enforcement** | `Enforcement` (reserve/commit/release/balance), `LeasedEnforcement` (app-local, lease-backed hard limit), `CacheLocalStore` (Laravel atomic cache, no Lua), `AllowanceLeaseSource`, `UsageBuffer` + `UsageEvent`, `MeterIngest` contract. Dogfooded `InteractsWithMetering` + `FakeAllowanceLeaseSource`. | ✅ |
+| **Metering / multi-dimensional (ADR-0005)** | Independent per-`(org, meter)` buckets, each carrying its own `MeterPolicy` (enabled · isolated allowance · nullable weight · `unlimited` · `OverageBehaviour`) — evaluated independently, never collapsed. Entitlement `enabled?` checked FIRST; `unlimited` zeroes cost explicitly (no phantom `?? 1.0`); allowances isolated; atomic disjoint-slice claim (`LocalStore::claimAllowance`) exempts included units exactly once under concurrency. `Enforcement::reserveBuckets/commitBuckets/releaseBuckets` reserve a SET (total cost = Σ per-bucket weighted usage); single-meter path is the set-of-one. Policy resolved through the Entitlement module (`MeterPolicyResolver` ← `EntitlementMeterPolicyResolver`, deny-by-default). Dogfooded `FakeMeterPolicyResolver`. | ✅ |
 | **Metering / event log** | `EventLog` contract = the immutable metering source of truth (append idempotent by event id · sum for invoice computation). **Storage optional/pluggable**: `InMemoryEventLog` (default) · `DatabaseEventLog` (MySQL/Postgres/sqlite — plenty for small deployments) · a ClickHouse adapter drops in behind the same contract for event-heavy scale (**ClickHouse optional, not required**). `DefaultMeterIngest` appends to the log; config `billing.metering.event_log = memory\|database`. | ✅ |
 | **Money** | `Money` VO wrapping brick/money (integer minor units, immutable) + `toBrick`/`fromBrick`/`multipliedBy`/`proratedBy`. | ✅ |
 | **Ledger** | Double-entry `LedgerTransaction` (validates balance/currency), `Ledger` contract, `InMemoryLedger` (derived balances). | ✅ |
@@ -26,8 +27,9 @@ Gate (green on every commit): `pint --test` · `phpstan` level max · `pest` ·
 | **Pricing** | `Coupon` (percentage/fixed, validity) + `CouponApplier` — discounts the net before tax. | ✅ |
 | **Entitlement** | `EntitlementProjector` → coarse tier via the `EntitlementWriter` port (decoupled from cbox-id). Scoped **per (org, product)** — an org holds many concurrent product entitlements. | ✅ |
 | **Reporting** | `MrrCalculator` (MRR + ARR per currency) · `ChurnCalculator`. | ✅ |
+| **Reconciliation (ADR-0003)** | Convergent reconciliation: per-`(org, meter)` cumulative-delta-vs-checkpoint (no per-event replay). `Reconciler`/`DefaultReconciler` post `sum(events) − checkpoint.total` into the `Ledger` idempotently (natural `PostingKey`, ADR-0002). Guards: **ingest-lag clamp** (`ceiling = now − lag`), **aged-out bucketing** (usage older than the window → `aged_out` account, never dropped), **per-entity locked checkpoint** with concurrency errors **rethrown** and other per-entity errors reported+skipped. `CheckpointStore` (contract · `InMemoryCheckpointStore` default · durable `DatabaseCheckpointStore` migration · `FakeCheckpointStore`). `billing:reconcile` command. Dogfooded `InteractsWithReconciliation`. | ✅ |
 
-Tests: 61 · assertions: 171.
+Tests: 145 · assertions: 455.
 
 > **Dependencies:** composes `cboxdk/laravel-tax` (`^0.1`) and `cboxdk/laravel-geo`
 > (`^0.4`) from Packagist. Gateway adapters (`laravel-billing-stripe`,
