@@ -68,7 +68,7 @@ it('issues an invoice from a confirmed quote, end to end', function () {
         new QuoteContext($place, CustomerType::Consumer, $entity->toSellerRegistrations()),
     );
 
-    $invoice = $invoicer->issue($quote, $entity, new DateTimeImmutable('2025-09-01'));
+    $invoice = $invoicer->issue($quote, $entity, 'acme', new DateTimeImmutable('2025-09-01'));
 
     expect($invoice->number)->toBe('DK-000001')
         ->and($invoice->seller->legalName)->toBe('Cbox ApS')
@@ -85,5 +85,5 @@ it('refuses to invoice a tax-pending quote', function () {
         new QuoteContext($this->geo->find(new CountryCode('US')), CustomerType::Consumer, usEntity()->toSellerRegistrations()),
     );
 
-    $invoicer->issue($quote, usEntity(), new DateTimeImmutable('2025-09-01'));
+    $invoicer->issue($quote, usEntity(), 'acme', new DateTimeImmutable('2025-09-01'));
 })->throws(CannotInvoicePendingQuote::class);

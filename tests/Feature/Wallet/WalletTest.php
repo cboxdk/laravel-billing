@@ -2,35 +2,65 @@
 
 declare(strict_types=1);
 
-use Cbox\Billing\Wallet\Enums\CreditType;
-use Cbox\Billing\Wallet\InMemoryWallet;
+use Cbox\Billing\Wallet\Exceptions\InvalidGrant;
+use Cbox\Billing\Wallet\Support\Pools;
 use Cbox\Billing\Wallet\ValueObjects\CreditGrant;
 use Cbox\Billing\Wallet\ValueObjects\Denomination;
 
-it('consumes across grants and reflects the decremented balance, then reports a shortfall', function (): void {
+it('consumes across pools and reflects the per-pool balances', function (): void {
     $calls = Denomination::unit('api.calls');
-    $wallet = new InMemoryWallet;
-    $wallet->grant(new CreditGrant('promo', 'org_a', CreditType::Promotional, $calls, 30, expiresAt: 5_000, priority: 10, grantedAt: 1));
-    $wallet->grant(new CreditGrant('prepaid', 'org_a', CreditType::Prepaid, $calls, 100, expiresAt: null, priority: 40, grantedAt: 1));
+    $wallet = $this->wallet();
+    $wallet->grant(new CreditGrant('promo', 'org_a', Pools::promotional(), $calls, 30, expiresAt: 5_000, grantedAt: 1));
+    $wallet->grant(new CreditGrant('inc', 'org_a', Pools::included(), $calls, 100, expiresAt: null, grantedAt: 1));
 
-    expect($wallet->balance('org_a', $calls, now: 1_000))->toBe(130);
+    expect($wallet->balance('org_a', Pools::promotional(), $calls, now: 1_000))->toBe(30)
+        ->and($wallet->balance('org_a', Pools::included(), $calls, now: 1_000))->toBe(100);
 
-    $plan = $wallet->consume('org_a', $calls, 50, now: 1_000);
+    // 50 demand: 30 promo + 20 included.
+    $plan = $wallet->consume('org_a', $calls, 50, $this->consumptionOrder(), now: 1_000);
     expect($plan->isFullyCovered())->toBeTrue()
-        ->and($wallet->balance('org_a', $calls, now: 1_000))->toBe(80);
+        ->and($wallet->balance('org_a', Pools::promotional(), $calls, now: 1_000))->toBe(0)
+        ->and($wallet->balance('org_a', Pools::included(), $calls, now: 1_000))->toBe(80);
+});
 
-    // Only 80 left — a 90 demand covers 80 and reports a 10 shortfall (→ overage).
-    $plan2 = $wallet->consume('org_a', $calls, 90, now: 1_000);
-    expect($plan2->covered)->toBe(80)
-        ->and($plan2->shortfall)->toBe(10)
-        ->and($wallet->balance('org_a', $calls, now: 1_000))->toBe(0);
+it('drives the purchased pool negative as the PAYG sink', function (): void {
+    $calls = Denomination::unit('api.calls');
+    $wallet = $this->wallet();
+    $wallet->grant(new CreditGrant('inc', 'org_a', Pools::included(), $calls, 40, expiresAt: null, grantedAt: 1));
+    $wallet->grant(new CreditGrant('topup', 'org_a', Pools::purchased(), $calls, 10, expiresAt: null, grantedAt: 1));
+
+    // 100 demand: 40 included + 10 top-up, then 50 accrued as debt in purchased.
+    $plan = $wallet->consume('org_a', $calls, 100, $this->consumptionOrder(), now: 1_000);
+
+    expect($plan->isFullyCovered())->toBeTrue()
+        ->and($wallet->balance('org_a', Pools::included(), $calls, now: 1_000))->toBe(0)
+        ->and($wallet->balance('org_a', Pools::purchased(), $calls, now: 1_000))->toBe(-50);
+});
+
+it('reports a shortfall when nothing can cover the demand', function (): void {
+    $calls = Denomination::unit('api.calls');
+    $wallet = $this->wallet();
+    $wallet->grant(new CreditGrant('inc', 'org_a', Pools::included(), $calls, 20, expiresAt: null, grantedAt: 1));
+
+    // Only 20 included, no PAYG sink provisioned: a 30 demand reports a 10 shortfall.
+    $plan = $wallet->consume('org_a', $calls, 30, $this->consumptionOrder(), now: 1_000);
+    expect($plan->covered)->toBe(20)
+        ->and($plan->shortfall)->toBe(10)
+        ->and($wallet->balance('org_a', Pools::included(), $calls, now: 1_000))->toBe(0);
+});
+
+it('rejects a grant into a pool that requires an expiry', function (): void {
+    $calls = Denomination::unit('api.calls');
+
+    expect(fn () => new CreditGrant('reg', 'org_a', Pools::regulated(), $calls, 100, expiresAt: null))
+        ->toThrow(InvalidGrant::class);
 });
 
 it('excludes expired grants from balance and consumption', function (): void {
     $meter = Denomination::unit('m');
-    $wallet = new InMemoryWallet;
-    $wallet->grant(new CreditGrant('expired', 'org_a', CreditType::Promotional, $meter, 100, expiresAt: 2_000, priority: 10, grantedAt: 1));
+    $wallet = $this->wallet();
+    $wallet->grant(new CreditGrant('expired', 'org_a', Pools::promotional(), $meter, 100, expiresAt: 2_000, grantedAt: 1));
 
-    expect($wallet->balance('org_a', $meter, now: 3_000))->toBe(0)
-        ->and($wallet->consume('org_a', $meter, 10, now: 3_000)->shortfall)->toBe(10);
+    expect($wallet->balance('org_a', Pools::promotional(), $meter, now: 3_000))->toBe(0)
+        ->and($wallet->consume('org_a', $meter, 10, $this->consumptionOrder(), now: 3_000)->shortfall)->toBe(10);
 });

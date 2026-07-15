@@ -3,67 +3,143 @@
 declare(strict_types=1);
 
 use Cbox\Billing\Wallet\CreditConsumer;
-use Cbox\Billing\Wallet\Enums\CreditType;
+use Cbox\Billing\Wallet\Support\Pools;
 use Cbox\Billing\Wallet\ValueObjects\CreditGrant;
 use Cbox\Billing\Wallet\ValueObjects\Denomination;
 
 $apiCalls = Denomination::unit('api.calls');
+$order = Pools::defaultConsumptionOrder();
 
-it('burns the soonest-expiring grant first (use-it-or-lose-it)', function () use ($apiCalls): void {
+it('consumes spendable pools in the given order', function () use ($apiCalls, $order): void {
     $grants = [
-        new CreditGrant('prepaid', 'org_a', CreditType::Prepaid, $apiCalls, 100, expiresAt: null, priority: 40, grantedAt: 1),
-        new CreditGrant('promo', 'org_a', CreditType::Promotional, $apiCalls, 50, expiresAt: 2_000, priority: 10, grantedAt: 5),
+        new CreditGrant('inc', 'org_a', Pools::included(), $apiCalls, 50, expiresAt: null, grantedAt: 1),
+        new CreditGrant('promo', 'org_a', Pools::promotional(), $apiCalls, 30, expiresAt: 9_000, grantedAt: 1),
     ];
 
-    $plan = (new CreditConsumer)->plan('org_a', $apiCalls, 30, $grants, now: 1_000);
+    // Order is [promotional, included, purchased]: promo burns before the allotment.
+    $plan = (new CreditConsumer)->plan('org_a', $apiCalls, 60, $grants, $order, now: 1_000);
 
-    expect($plan->draws)->toHaveCount(1)
+    expect($plan->draws)->toHaveCount(2)
         ->and($plan->draws[0]->grantId)->toBe('promo')
         ->and($plan->draws[0]->amount)->toBe(30)
+        ->and($plan->draws[0]->pool)->toBe(Pools::PROMOTIONAL)
+        ->and($plan->draws[1]->grantId)->toBe('inc')
+        ->and($plan->draws[1]->amount)->toBe(30)
+        ->and($plan->draws[1]->pool)->toBe(Pools::INCLUDED)
         ->and($plan->isFullyCovered())->toBeTrue();
 });
 
-it('draws across multiple grants in order and reports the shortfall', function () use ($apiCalls): void {
+it('burns the soonest-expiring grant first within a pool', function () use ($apiCalls, $order): void {
     $grants = [
-        new CreditGrant('g_expiring', 'org_a', CreditType::Promotional, $apiCalls, 20, expiresAt: 5_000, priority: 10, grantedAt: 1),
-        new CreditGrant('g_prepaid', 'org_a', CreditType::Prepaid, $apiCalls, 15, expiresAt: null, priority: 40, grantedAt: 1),
+        new CreditGrant('later', 'org_a', Pools::promotional(), $apiCalls, 50, expiresAt: 9_000, grantedAt: 1),
+        new CreditGrant('sooner', 'org_a', Pools::promotional(), $apiCalls, 50, expiresAt: 2_000, grantedAt: 5),
     ];
 
-    $plan = (new CreditConsumer)->plan('org_a', $apiCalls, 50, $grants, now: 1_000);
+    $plan = (new CreditConsumer)->plan('org_a', $apiCalls, 30, $grants, $order, now: 1_000);
 
-    expect($plan->draws)->toHaveCount(2)
-        ->and($plan->draws[0]->grantId)->toBe('g_expiring')
-        ->and($plan->draws[1]->grantId)->toBe('g_prepaid')
-        ->and($plan->covered)->toBe(35)
-        ->and($plan->shortfall)->toBe(15)
-        ->and($plan->isFullyCovered())->toBeFalse();
+    expect($plan->draws)->toHaveCount(1)
+        ->and($plan->draws[0]->grantId)->toBe('sooner')
+        ->and($plan->draws[0]->amount)->toBe(30);
 });
 
-it('ignores expired grants and other denominations', function () use ($apiCalls): void {
+it('breaks ties by priority then age within a pool', function () use ($apiCalls, $order): void {
     $grants = [
-        new CreditGrant('expired', 'org_a', CreditType::Promotional, $apiCalls, 100, expiresAt: 2_000, priority: 10, grantedAt: 1),
-        new CreditGrant('other_meter', 'org_a', CreditType::Prepaid, Denomination::unit('cpu.ms'), 100, expiresAt: null, priority: 40, grantedAt: 1),
-        new CreditGrant('money', 'org_a', CreditType::Prepaid, Denomination::money('EUR'), 100, expiresAt: null, priority: 40, grantedAt: 1),
-        new CreditGrant('good', 'org_a', CreditType::Prepaid, $apiCalls, 40, expiresAt: null, priority: 40, grantedAt: 1),
+        new CreditGrant('newer_low_prio', 'org_a', Pools::included(), $apiCalls, 10, expiresAt: null, priority: 40, grantedAt: 100),
+        new CreditGrant('high_prio', 'org_a', Pools::included(), $apiCalls, 10, expiresAt: null, priority: 10, grantedAt: 200),
+        new CreditGrant('older_same_prio', 'org_a', Pools::included(), $apiCalls, 10, expiresAt: null, priority: 40, grantedAt: 1),
     ];
 
-    $plan = (new CreditConsumer)->plan('org_a', $apiCalls, 40, $grants, now: 3_000);
+    $plan = (new CreditConsumer)->plan('org_a', $apiCalls, 30, $grants, $order, now: 0);
+
+    expect(array_map(fn ($d) => $d->grantId, $plan->draws))
+        ->toBe(['high_prio', 'older_same_prio', 'newer_low_prio']);
+});
+
+it('never consumes a non-spendable pool and reports the shortfall', function () use ($apiCalls, $order): void {
+    $grants = [
+        new CreditGrant('reg', 'org_a', Pools::regulated(), $apiCalls, 100, expiresAt: 9_000, grantedAt: 1),
+        new CreditGrant('inc', 'org_a', Pools::included(), $apiCalls, 20, expiresAt: null, grantedAt: 1),
+    ];
+
+    $plan = (new CreditConsumer)->plan('org_a', $apiCalls, 50, $grants, $order, now: 1_000);
+
+    // Only the 20 included units are spendable; the regulated pool is untouched.
+    expect($plan->covered)->toBe(20)
+        ->and($plan->shortfall)->toBe(30)
+        ->and($plan->draws)->toHaveCount(1)
+        ->and($plan->draws[0]->grantId)->toBe('inc');
+});
+
+it('ignores expired grants and other denominations', function () use ($apiCalls, $order): void {
+    $grants = [
+        new CreditGrant('expired', 'org_a', Pools::promotional(), $apiCalls, 100, expiresAt: 2_000, grantedAt: 1),
+        new CreditGrant('other_meter', 'org_a', Pools::included(), Denomination::unit('cpu.ms'), 100, expiresAt: null, grantedAt: 1),
+        new CreditGrant('money', 'org_a', Pools::included(), Denomination::money('EUR'), 100, expiresAt: null, grantedAt: 1),
+        new CreditGrant('good', 'org_a', Pools::included(), $apiCalls, 40, expiresAt: null, grantedAt: 1),
+    ];
+
+    $plan = (new CreditConsumer)->plan('org_a', $apiCalls, 40, $grants, $order, now: 3_000);
 
     expect($plan->draws)->toHaveCount(1)
         ->and($plan->draws[0]->grantId)->toBe('good')
         ->and($plan->isFullyCovered())->toBeTrue();
 });
 
-it('breaks ties by priority then age when expiry is equal', function () use ($apiCalls): void {
+it('absorbs the uncovered remainder into the PAYG sink as a negative draw', function () use ($apiCalls, $order): void {
     $grants = [
-        new CreditGrant('newer_low_prio', 'org_a', CreditType::Prepaid, $apiCalls, 10, expiresAt: null, priority: 40, grantedAt: 100),
-        new CreditGrant('promo', 'org_a', CreditType::Promotional, $apiCalls, 10, expiresAt: null, priority: 10, grantedAt: 200),
-        new CreditGrant('older_same_prio', 'org_a', CreditType::Prepaid, $apiCalls, 10, expiresAt: null, priority: 40, grantedAt: 1),
+        new CreditGrant('inc', 'org_a', Pools::included(), $apiCalls, 40, expiresAt: null, grantedAt: 1),
+        new CreditGrant('topup', 'org_a', Pools::purchased(), $apiCalls, 20, expiresAt: null, grantedAt: 1),
     ];
 
-    $plan = (new CreditConsumer)->plan('org_a', $apiCalls, 30, $grants, now: 0);
+    // Demand 100: 40 included + 20 purchased top-up spent, then 40 absorbed as debt
+    // in the purchased sink (its grant ends at 20 − 20 − 40 = −40).
+    $plan = (new CreditConsumer)->plan('org_a', $apiCalls, 100, $grants, $order, now: 1_000);
 
-    // promo (priority 10) first; then the two prepaid (priority 40) oldest-first.
-    expect(array_map(fn ($d) => $d->grantId, $plan->draws))
-        ->toBe(['promo', 'older_same_prio', 'newer_low_prio']);
+    expect($plan->isFullyCovered())->toBeTrue()
+        ->and($plan->covered)->toBe(100)
+        ->and($plan->shortfall)->toBe(0)
+        ->and($plan->draws)->toHaveCount(2);
+
+    $sink = collect($plan->draws)->firstWhere('pool', Pools::PURCHASED);
+    expect($sink->grantId)->toBe('topup')
+        ->and($sink->amount)->toBe(60);
+});
+
+it('absorbs overage against a zero-balance sink account', function () use ($apiCalls, $order): void {
+    $grants = [
+        new CreditGrant('overage', 'org_a', Pools::purchased(), $apiCalls, 0, expiresAt: null, grantedAt: 1),
+    ];
+
+    $plan = (new CreditConsumer)->plan('org_a', $apiCalls, 30, $grants, $order, now: 1_000);
+
+    expect($plan->isFullyCovered())->toBeTrue()
+        ->and($plan->draws)->toHaveCount(1)
+        ->and($plan->draws[0]->grantId)->toBe('overage')
+        ->and($plan->draws[0]->amount)->toBe(30);
+});
+
+it('reports a shortfall when the sink has no grant to carry the debt', function () use ($apiCalls, $order): void {
+    $grants = [
+        new CreditGrant('inc', 'org_a', Pools::included(), $apiCalls, 10, expiresAt: null, grantedAt: 1),
+    ];
+
+    // No purchased grant exists, so the PAYG sink cannot absorb the remainder.
+    $plan = (new CreditConsumer)->plan('org_a', $apiCalls, 50, $grants, $order, now: 1_000);
+
+    expect($plan->covered)->toBe(10)
+        ->and($plan->shortfall)->toBe(40)
+        ->and($plan->isFullyCovered())->toBeFalse();
+});
+
+it('leaves a shortfall when the last pool in the order may not go negative', function () use ($apiCalls): void {
+    $grants = [
+        new CreditGrant('inc', 'org_a', Pools::included(), $apiCalls, 15, expiresAt: null, grantedAt: 1),
+    ];
+
+    // Order ends on the (non-negative) included pool: no sink, remainder is shortfall.
+    $order = [Pools::promotional(), Pools::included()];
+    $plan = (new CreditConsumer)->plan('org_a', $apiCalls, 50, $grants, $order, now: 1_000);
+
+    expect($plan->covered)->toBe(15)
+        ->and($plan->shortfall)->toBe(35);
 });
