@@ -17,6 +17,8 @@ class SubscriptionServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(SubscriptionManager::class, static fn (): SubscriptionManager => new SubscriptionManager);
+
         $this->app->singleton(ProrationCalculator::class, static fn (): ProrationCalculator => new ProrationCalculator);
 
         $this->app->singleton(PlanChangePreviewer::class, static fn (Application $app): PlanChangePreviewer => new PlanChangePreviewer(
