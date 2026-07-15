@@ -18,11 +18,8 @@ Gate (green on every commit): `pint --test` · `phpstan` level max · `pest` ·
 
 Tests: 18 · assertions: 60.
 
-> **Dependency note:** the Quote module pulls `cboxdk/laravel-tax` (+ `laravel-geo`).
-> `laravel-geo` is on Packagist (`^0.4`); `laravel-tax` is public on GitHub but not
-> yet on Packagist, so it is wired via a local **path repository** for now. Once
-> `cboxdk/laravel-tax` is submitted to Packagist, switch the require to `^0.1` and
-> drop the path repo.
+> **Dependencies:** the Quote module composes `cboxdk/laravel-tax` (`^0.1`) and
+> `cboxdk/laravel-geo` (`^0.4`), both from Packagist.
 
 ## Next (per the foundation build order)
 
