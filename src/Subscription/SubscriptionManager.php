@@ -33,6 +33,16 @@ readonly class SubscriptionManager
         return $this->copy($subscription, cancelAtPeriodEnd: false);
     }
 
+    /**
+     * Cancel immediately — the org ends on no plan right now (not at period end). This
+     * is the cancel-to-null transition ADR-0006 keys forfeiture on; the pure engine
+     * only produces the ended state, the lifecycle wires the forfeiture.
+     */
+    public function cancelNow(Subscription $subscription): Subscription
+    {
+        return $this->copy($subscription, status: SubscriptionStatus::Canceled, cancelAtPeriodEnd: false);
+    }
+
     /** Schedule (or replace) a price change — mutable until it applies. */
     public function scheduleChange(Subscription $subscription, string $newPriceId, DateTimeImmutable $effectiveAt): Subscription
     {
