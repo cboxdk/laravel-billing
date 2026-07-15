@@ -30,10 +30,10 @@ it('ships a default catalog with the intended behaviour matrix', function (): vo
         ->and($regulated->requiresExpiry)->toBeTrue();
 });
 
-it('orders the default burn-down promotional, included, then the sink last', function (): void {
+it('orders the default burn-down included, promotional, then the sink last (ADR-0013)', function (): void {
     $keys = array_map(fn (Pool $p) => $p->key, Pools::defaultConsumptionOrder());
 
-    expect($keys)->toBe([Pools::PROMOTIONAL, Pools::INCLUDED, Pools::PURCHASED]);
+    expect($keys)->toBe([Pools::INCLUDED, Pools::PROMOTIONAL, Pools::PURCHASED]);
 });
 
 it('rejects a pool that may go negative without being spendable', function (): void {

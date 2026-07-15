@@ -29,7 +29,7 @@ function incomingAllotment(int $units, Denomination $calls): CreditGrant
         remaining: $units,
         expiresAt: null,
         grantedAt: 1_000,
-        cadence: GrantCadence::Recurring,
+        cadence: GrantCadence::Monthly,
     );
 }
 

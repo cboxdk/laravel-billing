@@ -33,6 +33,21 @@ class InMemoryWallet implements Wallet
         $this->grants[$grant->id] = $grant;
     }
 
+    /**
+     * The org's current grant lots — the `existing` input a {@see GrantScheduler}
+     * dedupes against so a recurring grant/slice is deposited at most once. A durable
+     * wallet exposes the same read scoped to the relevant pool/denomination/period.
+     *
+     * @return list<CreditGrant>
+     */
+    public function grantsFor(string $org): array
+    {
+        return array_values(array_filter(
+            $this->grants,
+            static fn (CreditGrant $grant): bool => $grant->org === $org,
+        ));
+    }
+
     public function consume(string $org, Denomination $denomination, int $amount, array $poolOrder, int $now): ConsumptionPlan
     {
         $plan = $this->consumer->plan($org, $denomination, $amount, array_values($this->grants), $poolOrder, $now);

@@ -74,14 +74,17 @@ class Pools
     }
 
     /**
-     * The default burn-down order: time-boxed promotional first (use-it-or-lose-it),
-     * then the forfeitable plan allotment, then the PAYG sink last so it absorbs any
-     * remainder as debt. The non-spendable regulated pool is deliberately absent.
+     * The default burn-down order (ADR-0013): the per-period `included` allowance
+     * first, then `promotional` credit, then the PAYG `purchased` sink last so it
+     * absorbs any remainder as debt (overage). Included allowance, credits, and
+     * pay-as-you-go therefore mix in one deterministic order — `included → promotional
+     * → purchased/PAYG-sink → overage`. The non-spendable regulated pool is
+     * deliberately absent.
      *
      * @return list<Pool>
      */
     public static function defaultConsumptionOrder(): array
     {
-        return [self::promotional(), self::included(), self::purchased()];
+        return [self::included(), self::promotional(), self::purchased()];
     }
 }

@@ -16,16 +16,17 @@ it('consumes spendable pools in the given order', function () use ($apiCalls, $o
         new CreditGrant('promo', 'org_a', Pools::promotional(), $apiCalls, 30, expiresAt: 9_000, grantedAt: 1),
     ];
 
-    // Order is [promotional, included, purchased]: promo burns before the allotment.
+    // Order is [included, promotional, purchased] (ADR-0013): the per-period included
+    // allowance burns before promotional credit.
     $plan = (new CreditConsumer)->plan('org_a', $apiCalls, 60, $grants, $order, now: 1_000);
 
     expect($plan->draws)->toHaveCount(2)
-        ->and($plan->draws[0]->grantId)->toBe('promo')
-        ->and($plan->draws[0]->amount)->toBe(30)
-        ->and($plan->draws[0]->pool)->toBe(Pools::PROMOTIONAL)
-        ->and($plan->draws[1]->grantId)->toBe('inc')
-        ->and($plan->draws[1]->amount)->toBe(30)
-        ->and($plan->draws[1]->pool)->toBe(Pools::INCLUDED)
+        ->and($plan->draws[0]->grantId)->toBe('inc')
+        ->and($plan->draws[0]->amount)->toBe(50)
+        ->and($plan->draws[0]->pool)->toBe(Pools::INCLUDED)
+        ->and($plan->draws[1]->grantId)->toBe('promo')
+        ->and($plan->draws[1]->amount)->toBe(10)
+        ->and($plan->draws[1]->pool)->toBe(Pools::PROMOTIONAL)
         ->and($plan->isFullyCovered())->toBeTrue();
 });
 

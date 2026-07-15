@@ -57,6 +57,38 @@ readonly class Money
         return new self($this->money->multipliedBy($numerator)->dividedBy($denominator, RoundingMode::HalfUp));
     }
 
+    /**
+     * Split an integer `$total` into `$parts` whole units as evenly as possible,
+     * distributing the remainder one unit at a time to the earliest parts — the
+     * largest-remainder method for equal weights. The parts sum to `$total` EXACTLY
+     * (no unit dropped or duplicated), mirroring brick/money's cent-safe allocation
+     * but for bare integer units (a meter's units or minor money units). This is the
+     * drift-free split ADR-0014 requires to distribute a billing-period total across
+     * a variable number of cadence slices (leap years, 30/31-day months).
+     *
+     * @return list<int> exactly `$parts` values (empty when `$parts <= 0`) summing to `$total`
+     */
+    public static function allocate(int $total, int $parts): array
+    {
+        if ($parts <= 0) {
+            return [];
+        }
+
+        // intdiv rounds toward zero; the remainder carries the sign of $total, so a
+        // negative total spreads its remainder the same way (never stranding a unit).
+        $base = intdiv($total, $parts);
+        $remainder = $total - $base * $parts;
+        $step = $remainder <=> 0;
+        $extra = abs($remainder);
+
+        $slices = [];
+        for ($i = 0; $i < $parts; $i++) {
+            $slices[] = $base + ($i < $extra ? $step : 0);
+        }
+
+        return $slices;
+    }
+
     /** The amount in integer minor units (e.g. cents). */
     public function minor(): int
     {

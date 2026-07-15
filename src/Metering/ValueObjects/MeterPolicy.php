@@ -18,7 +18,12 @@ use Cbox\Billing\Metering\Enums\OverageBehaviour;
  *                   and runs for free).
  *  - `allowance`  — included units per period, ISOLATED: they are this bucket's own
  *                   pool and are never funded from, nor contributed to, another
- *                   meter's basis.
+ *                   meter's basis. Under ADR-0013 this is the balance of the meter's
+ *                   recurring grant into the `included` pool — the allowance's HOME is
+ *                   a pool grant so it can mix with credits in one burn-down; a
+ *                   wallet-backed resolver fills it via {@see withAllowance()} rather
+ *                   than the number being hand-authored. The isolation, weighting, and
+ *                   disabled-first semantics of ADR-0005 are unchanged.
  *  - `multiplier` — cost contribution per billable (overage) unit. Deliberately
  *                   NULLABLE with NO default: an absent multiplier means "no cost
  *                   basis configured" and yields zero cost — there is no implicit
@@ -76,6 +81,23 @@ readonly class MeterPolicy
     public static function disabled(): self
     {
         return new self(enabled: false);
+    }
+
+    /**
+     * This policy with its included allowance replaced by `$allowance` — the ADR-0013
+     * seam a wallet-backed resolver uses to source the exempt (free) size from the
+     * meter's `included`-pool grant balance, leaving weight, overage, and entitlement
+     * untouched. Every other field is preserved.
+     */
+    public function withAllowance(int $allowance): self
+    {
+        return new self(
+            enabled: $this->enabled,
+            allowance: $allowance,
+            multiplier: $this->multiplier,
+            unlimited: $this->unlimited,
+            overage: $this->overage,
+        );
     }
 
     /**

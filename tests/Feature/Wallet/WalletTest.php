@@ -16,11 +16,12 @@ it('consumes across pools and reflects the per-pool balances', function (): void
     expect($wallet->balance('org_a', Pools::promotional(), $calls, now: 1_000))->toBe(30)
         ->and($wallet->balance('org_a', Pools::included(), $calls, now: 1_000))->toBe(100);
 
-    // 50 demand: 30 promo + 20 included.
+    // 50 demand, order [included, promotional, purchased] (ADR-0013): 50 from the
+    // included allowance, promotional credit untouched.
     $plan = $wallet->consume('org_a', $calls, 50, $this->consumptionOrder(), now: 1_000);
     expect($plan->isFullyCovered())->toBeTrue()
-        ->and($wallet->balance('org_a', Pools::promotional(), $calls, now: 1_000))->toBe(0)
-        ->and($wallet->balance('org_a', Pools::included(), $calls, now: 1_000))->toBe(80);
+        ->and($wallet->balance('org_a', Pools::promotional(), $calls, now: 1_000))->toBe(30)
+        ->and($wallet->balance('org_a', Pools::included(), $calls, now: 1_000))->toBe(50);
 });
 
 it('drives the purchased pool negative as the PAYG sink', function (): void {
