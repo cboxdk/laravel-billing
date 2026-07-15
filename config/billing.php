@@ -22,6 +22,22 @@ return [
     ],
 
     /*
+     * The credit wallet — prepaid / promotional credit-pack grant lots and the
+     * pool-order-aware burn-down over them.
+     */
+    'wallet' => [
+
+        /*
+         * Where the wallet's grant lots live. `memory` (default, zero-config — lost on
+         * restart, fine for tests and stateless previews) · `database` (run the
+         * migration; grant lots are durable, so prepaid and promotional credit survives a
+         * restart). The durable store is a pure storage swap — the burn-down, expiry, and
+         * forfeiture semantics are identical to the in-memory wallet.
+         */
+        'store' => env('CBOX_BILLING_WALLET_STORE', 'memory'),
+    ],
+
+    /*
      * Payment collection, including the dunning / delinquency policy.
      */
     'payment' => [

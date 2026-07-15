@@ -17,7 +17,8 @@ Gate (green on every commit): `pint --test` · `phpstan` level max · `pest` ·
 | **Ledger** | Double-entry `LedgerTransaction` (validates balance/currency), `Ledger` contract, `InMemoryLedger` (derived balances). | ✅ |
 | **Ledger (durable)** | `DatabaseLedger` — immutable append-only rows (migration), balances derived by summing, atomic + idempotent posting (re-post is a no-op). | ✅ |
 | **Ledger (two-phase)** | `TwoPhaseLedger` — reserve / commit / release; a reservation is a pending transfer that lowers `available` immediately but not the posted `balance`. `InMemoryTwoPhaseLedger`. | ✅ |
-| **Wallet / credits** | `CreditGrant` + `CreditConsumer` (pure burn-down: denomination → expiry → priority → age), `ConsumptionPlan`. | ✅ |
+| **Wallet / credits** | `CreditGrant` + `CreditConsumer` (pure burn-down: denomination → expiry → priority → age), `ConsumptionPlan`. Pool-attributed expiry/forfeiture (ADR-0006). | ✅ |
+| **Wallet (durable)** | `DatabaseWallet` — one row per grant **lot** (migration), balances derived by summing active lots; same `CreditConsumer` burn-down, same expiry/forfeiture semantics as `InMemoryWallet` (a pure storage swap). `grant()` idempotent + gap-lock-safe (`insertOrIgnore` on the grant id); `consume()` locks the org's lots `FOR UPDATE`, plans, then atomically decrements each drawn lot (the PAYG sink may go negative); `expire()`/`forfeit()` remove only a lot's positive remainder under lock; deadlocks propagate. Bound by config `billing.wallet.store = memory\|database`. Dogfooded `databaseWallet()` on `InteractsWithWallet`. | ✅ |
 | **Quote / consequence-preview** | `QuoteBuilder` composes **`cboxdk/laravel-tax`** (seller-of-record routing + per-line tax) + wallet credit → a confirmable `Quote` (net/tax/gross/credit/dueNow · `TaxResolution`). Progressive tax resolution: an unresolved jurisdiction returns a *tax-pending* quote — never a wrong number. | ✅ |
 | **Catalog** | Stripe-style `Product`/`Price` split; effective-date price versioning → **grandfathering**. `PricingModel` (flat · per-unit); `Catalog` + `InMemoryCatalog`. Plans carry a **`family`** (deny-by-default: an unfamilied plan is its own singleton family) and a **`PlanStatus`** (`offered`/`legacy`); `Catalog::products()` enumerates plans. Dogfooded `InteractsWithCatalog`. | ✅ |
 | **Seller (of record)** | `SellerEntity` → tax seller-registrations; `EntityRouter`/`DefaultEntityRouter` routes a buyer to the entity registered in their country else a default — the multi-entity routing that drives tax. | ✅ |
@@ -31,7 +32,7 @@ Gate (green on every commit): `pint --test` · `phpstan` level max · `pest` ·
 | **Reporting** | `MrrCalculator` (MRR + ARR per currency) · `ChurnCalculator`. | ✅ |
 | **Reconciliation (ADR-0003)** | Convergent reconciliation: per-`(org, meter)` cumulative-delta-vs-checkpoint (no per-event replay). `Reconciler`/`DefaultReconciler` post `sum(events) − checkpoint.total` into the `Ledger` idempotently (natural `PostingKey`, ADR-0002). Guards: **ingest-lag clamp** (`ceiling = now − lag`), **aged-out bucketing** (usage older than the window → `aged_out` account, never dropped), **per-entity locked checkpoint** with concurrency errors **rethrown** and other per-entity errors reported+skipped. `CheckpointStore` (contract · `InMemoryCheckpointStore` default · durable `DatabaseCheckpointStore` migration · `FakeCheckpointStore`). `billing:reconcile` command. Dogfooded `InteractsWithReconciliation`. | ✅ |
 
-Tests: 228 · assertions: 758.
+Tests: 277 · assertions: 915.
 
 > **Dependencies:** composes `cboxdk/laravel-tax` (`^0.1`) and `cboxdk/laravel-geo`
 > (`^0.4`) from Packagist. Gateway adapters (`laravel-billing-stripe`,
