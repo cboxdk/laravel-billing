@@ -26,6 +26,14 @@ return [
          * through and are caught by reconciliation instead.
          */
         'dedup_window_days' => (int) env('CBOX_BILLING_DEDUP_WINDOW_DAYS', 32),
+
+        /*
+         * Where the immutable usage event log (the metering source of truth) is
+         * stored. `memory` (default, zero-config) · `database` (MySQL/Postgres — run
+         * the migration; fine for small/most deployments) · a ClickHouse adapter
+         * binds the EventLog contract for event-heavy scale. ClickHouse is optional.
+         */
+        'event_log' => env('CBOX_BILLING_EVENT_LOG', 'memory'),
     ],
 
 ];
