@@ -22,5 +22,6 @@ customer, not a special case.
 | [0006](0006-credit-lots-expiry-forfeiture.md) | Credit **lot accounting**, expiry, and forfeiture |
 | [0007](0007-preview-equals-charge.md) | **Preview equals charge**; per-line rounding to the gateway |
 | [0008](0008-derived-hot-path-balance.md) | Hot-path balance is **derived**, never a loose cached number |
+| [0009](0009-product-integration-hosted-and-embedded.md) | Product integration: **hosted sessions** and **embedded intents** (platform-level: app + adapters + SDK) |
 
 **Format:** Status · Context · Decision · Consequences · Alternatives considered.
