@@ -11,6 +11,7 @@ use Cbox\Billing\Metering\MeteringServiceProvider;
 use Cbox\Billing\Payment\PaymentServiceProvider;
 use Cbox\Billing\Pricing\PricingServiceProvider;
 use Cbox\Billing\Quote\QuoteServiceProvider;
+use Cbox\Billing\Reporting\ReportingServiceProvider;
 use Cbox\Billing\Subscription\SubscriptionServiceProvider;
 use Illuminate\Support\ServiceProvider;
 
@@ -32,6 +33,7 @@ class BillingServiceProvider extends ServiceProvider
         PaymentServiceProvider::class,
         PricingServiceProvider::class,
         EntitlementServiceProvider::class,
+        ReportingServiceProvider::class,
     ];
 
     public function register(): void
