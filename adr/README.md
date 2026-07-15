@@ -25,5 +25,6 @@ customer, not a special case.
 | [0009](0009-product-integration-hosted-and-embedded.md) | Product integration: **hosted sessions** and **embedded intents** (platform-level: app + adapters + SDK) |
 | [0010](0010-plan-families-and-transition-policy.md) | **Plan families** + transition policy (deny-by-default; legacy plans are one-way) |
 | [0011](0011-credit-consequences-of-transitions.md) | **Credit consequences** of plan change / cancel (forfeit-and-regrant default; preview shows the delta) |
+| [0012](0012-billing-cycle-anchor-and-proration-mechanics.md) | **Billing cycle anchor** + month-end clamp, mid-cycle credit proration, add-on cycles |
 
 **Format:** Status · Context · Decision · Consequences · Alternatives considered.
