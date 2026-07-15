@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cbox\Billing;
 
+use Cbox\Billing\Account\AccountServiceProvider;
 use Cbox\Billing\Catalog\CatalogServiceProvider;
 use Cbox\Billing\Entitlement\EntitlementServiceProvider;
 use Cbox\Billing\Invoice\InvoiceServiceProvider;
@@ -12,8 +13,11 @@ use Cbox\Billing\Metering\MeteringServiceProvider;
 use Cbox\Billing\Payment\PaymentServiceProvider;
 use Cbox\Billing\Pricing\PricingServiceProvider;
 use Cbox\Billing\Quote\QuoteServiceProvider;
+use Cbox\Billing\Reconciliation\ReconciliationServiceProvider;
+use Cbox\Billing\Refund\RefundServiceProvider;
 use Cbox\Billing\Reporting\ReportingServiceProvider;
 use Cbox\Billing\Subscription\SubscriptionServiceProvider;
+use Cbox\Billing\Wallet\WalletServiceProvider;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -26,16 +30,20 @@ class BillingServiceProvider extends ServiceProvider
      * @var list<class-string<ServiceProvider>>
      */
     private const MODULE_PROVIDERS = [
+        WalletServiceProvider::class,
         MeteringServiceProvider::class,
         CatalogServiceProvider::class,
         QuoteServiceProvider::class,
+        AccountServiceProvider::class,
         InvoiceServiceProvider::class,
         SubscriptionServiceProvider::class,
         PaymentServiceProvider::class,
+        RefundServiceProvider::class,
         PricingServiceProvider::class,
         EntitlementServiceProvider::class,
         ReportingServiceProvider::class,
         LedgerServiceProvider::class,
+        ReconciliationServiceProvider::class,
     ];
 
     public function register(): void
