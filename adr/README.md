@@ -23,5 +23,7 @@ customer, not a special case.
 | [0007](0007-preview-equals-charge.md) | **Preview equals charge**; per-line rounding to the gateway |
 | [0008](0008-derived-hot-path-balance.md) | Hot-path balance is **derived**, never a loose cached number |
 | [0009](0009-product-integration-hosted-and-embedded.md) | Product integration: **hosted sessions** and **embedded intents** (platform-level: app + adapters + SDK) |
+| [0010](0010-plan-families-and-transition-policy.md) | **Plan families** + transition policy (deny-by-default; legacy plans are one-way) |
+| [0011](0011-credit-consequences-of-transitions.md) | **Credit consequences** of plan change / cancel (forfeit-and-regrant default; preview shows the delta) |
 
 **Format:** Status · Context · Decision · Consequences · Alternatives considered.
