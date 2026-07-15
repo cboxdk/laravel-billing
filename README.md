@@ -14,11 +14,23 @@ domain-free: every capability sits behind a contract you bind, mock or replace.
 > UI/hosting layer yourself; reach for this package to embed billing in your own
 > Laravel app.
 
-> **Status: early / pre-1.0.** The architecture is settled — see
-> [`docs/foundation-contracts.md`](docs/foundation-contracts.md), the coherence
-> layer every module builds against. The first module shipped is the metering
-> **enforcement hot path** (below); catalog, ledger, invoicing, pricing and the
-> gateways follow the build order in the foundation doc.
+> **Status: v0.2.0 (pre-1.0).** The architecture is settled and the full module
+> surface — metering, wallets, ledger, reconciliation, subscriptions,
+> entitlements, accounts, catalog, quotes/invoicing, payments, refunds — has
+> shipped behind contracts. Start with the [documentation](docs/index.md); the
+> architecture rationale is in
+> [`docs/getting-started/architecture.md`](docs/getting-started/architecture.md)
+> and the hardened decisions in the [ADRs](adr/).
+
+## Documentation
+
+Full docs live in [`docs/`](docs/index.md):
+
+- [Quick start](docs/quickstart.md) — install to a hard-limited usage check.
+- [Core concepts](docs/core-concepts/_index.md) — one page per module.
+- [Cookbook](docs/cookbook/_index.md) — task-first recipes.
+- [Extension points](docs/extension-points/_index.md) — contracts, adapters, testing.
+- [Configuration](docs/configuration/_index.md) · [Security](docs/security/_index.md).
 
 ## The three-layer model (why it's correct)
 
@@ -56,7 +68,8 @@ $enforcement->commit($reservation, actual: 5);                        // settles
 
 ## Requirements
 
-PHP `^8.4`; Laravel `^12 || ^13`. See `composer.json`.
+PHP `^8.4`; Laravel `^13`. See [`docs/requirements.md`](docs/requirements.md) and
+`composer.json`.
 
 ## Development
 

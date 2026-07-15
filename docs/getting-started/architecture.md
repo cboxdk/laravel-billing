@@ -1,12 +1,21 @@
-# cbox-billing — Foundation Contracts
+---
+title: Architecture & foundation contracts
+description: The three-layer model, the data model, the ledger invariants, the real-time enforcement path, and the cbox-id seam.
+weight: 12
+---
+
+# Architecture & foundation contracts
 
 The coherence layer every billing workstream builds against — the data model, the
 core contracts, the ledger invariants, the real-time enforcement path, and the
 cbox-id seam. Mirrors how `laravel-id` started: agree the contracts before code.
 
-Status: **draft / pre-code.** Grounded in a verified competitive+architecture
-research pass (2026-07-13). Items marked **⚡ SPIKE** are deliberately unsettled
-and must be prototyped before they harden.
+Status: **the load-bearing decisions here are settled and shipped in v0.2.0.** The
+architecture below is the reference for *why* the modules are shaped the way they
+are; the decisions that hardened are recorded as [ADRs](../../adr/) (linked inline
+throughout the [core concepts](../core-concepts/_index.md)). Items still marked
+**⚡ SPIKE** are the pieces that live in the app-side SDK and the deployable app,
+not in this library.
 
 ---
 
