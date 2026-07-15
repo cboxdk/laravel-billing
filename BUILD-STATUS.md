@@ -1,7 +1,7 @@
 # cbox-billing — build status
 
 Living status of `cboxdk/laravel-billing`. Architecture spec:
-[`docs/foundation-contracts.md`](docs/foundation-contracts.md).
+[`docs/getting-started/architecture.md`](docs/getting-started/architecture.md).
 
 Gate (green on every commit): `pint --test` · `phpstan` level max · `pest` ·
 `composer audit` · `license-check` · `sbom`.
