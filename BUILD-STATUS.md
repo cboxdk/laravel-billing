@@ -18,9 +18,14 @@ Gate (green on every commit): `pint --test` · `phpstan` level max · `pest` ·
 | **Catalog** | Stripe-style `Product`/`Price` split; versioned prices with effective-date ranges → **grandfathering** (a subscriber pins the price effective at their start date; new sales get the current version). `PricingModel` (flat · per-unit); `Catalog` contract + `InMemoryCatalog` (newest-effective-version resolution). Feeds pinned prices into the Quote. | ✅ resolution + grandfathering + catalog→quote tests |
 | **Seller (of record)** | `SellerEntity` (legal identity + tax registrations + invoice prefix) → produces the tax engine's seller-registrations; `EntityRouter` + `DefaultEntityRouter` routes a buyer to the entity registered in their country (domestic) else a default (cross-border) — the multi-entity routing that drives tax. | ✅ routing + entity→registrations tests |
 | **Invoice** | `Invoicer` fixes a confirmed `Quote` to a legal number from the entity's own `InvoiceNumberSequence` (per-entity, monotonic, gapless) → `Invoice`. Refuses a tax-pending quote (`CannotInvoicePendingQuote`). | ✅ per-entity numbering + confirm→invoice + refuse-pending + end-to-end |
-| **Subscription / plan change** | `BillingPeriod` (day-based) + `ProrationCalculator` (per-period delta × remaining-fraction); `PlanChangePreviewer` → **the upgrade/downgrade consequence-preview**: an upgrade charges a prorated difference now (taxed via the quote engine), effective immediately; a downgrade is scheduled at period end with nothing due now. | ✅ period + proration + upgrade + downgrade tests |
+| **Subscription** | `BillingPeriod` + `ProrationCalculator` + `PlanChangePreviewer` (the upgrade/downgrade consequence-preview). Lifecycle: `Subscription` + `SubscriptionManager` (create · cancelAtPeriodEnd · resume · scheduleChange [mutable] · renew → enacts cancellation / applies scheduled price change). | ✅ proration + upgrade/downgrade + full lifecycle tests |
+| **Payment** | Gateway-agnostic `PaymentGateway` (charge `PaymentIntent` → `PaymentResult`) + dependency-free `ManualPaymentGateway` default; `DunningPolicy` retry schedule. Stripe/Mollie = opt-in adapter packages. | ✅ manual + fake + dunning tests |
+| **Pricing** | `Coupon` (percentage/fixed, validity) + `CouponApplier` — discounts the net before tax; out-of-window = no-op, fixed floored at zero. | ✅ percentage + fixed + window + discount-before-tax tests |
+| **Entitlement** | `EntitlementProjector` maps a subscription → coarse tier via the `EntitlementWriter` port (decoupled from cbox-id; Null default). **Scoped per (org, product)** — an org holds many concurrent product entitlements; set upserts one product, revoke removes only that sourceRef. | ✅ per-product scoping + revoke-isolation tests |
+| **Reporting** | `MrrCalculator` (MRR + ARR per currency) · `ChurnCalculator`. | ✅ MRR/ARR + churn tests |
+| **Ledger (durable)** | `DatabaseLedger` — immutable append-only rows (migration), balances derived by summing, **atomic + idempotent** posting (re-post is a no-op). Same `Ledger` contract as the in-memory one. | ✅ post + derive + idempotency + accumulation tests |
 
-Tests: 31 · assertions: 97.
+Tests: 52 · assertions: 148.
 
 > **Dependencies:** the Quote module composes `cboxdk/laravel-tax` (`^0.1`) and
 > `cboxdk/laravel-geo` (`^0.4`), both from Packagist.
