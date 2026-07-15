@@ -27,5 +27,6 @@ customer, not a special case.
 | [0011](0011-credit-consequences-of-transitions.md) | **Credit consequences** of plan change / cancel (forfeit-and-regrant default; preview shows the delta) |
 | [0012](0012-billing-cycle-anchor-and-proration-mechanics.md) | **Billing cycle anchor** + month-end clamp, mid-cycle credit proration, add-on cycles |
 | [0013](0013-unified-entitlement-allowances-credits-cadences.md) | **Unified entitlement** — included allowances + credits in one burn-down; per-grant cadences (day/month/year) |
+| [0014](0014-allotment-distribution.md) | **Allotment distribution** — drip a period total across a finer cadence (daily…half-yearly), remainder-safe |
 
 **Format:** Status · Context · Decision · Consequences · Alternatives considered.
