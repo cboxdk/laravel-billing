@@ -17,6 +17,9 @@ beforeEach(function () {
     $this->previewer = $this->app->make(PlanChangePreviewer::class);
     $this->period = new BillingPeriod(new DateTimeImmutable('2025-09-01'), new DateTimeImmutable('2025-10-01'));
     $this->midPeriod = new DateTimeImmutable('2025-09-16'); // 15 of 30 days remaining
+    // Same-family plans, so the transition policy allows the change and the proration runs.
+    $this->fromPlan = $this->plan('pro', family: 'standard');
+    $this->toPlan = $this->plan('pro-plus', family: 'standard');
 });
 
 function dkContext(): QuoteContext
@@ -48,6 +51,8 @@ it('prorates a price change over the remaining period', function () {
 
 it('previews an upgrade: prorated charge now (taxed), effective immediately', function () {
     $preview = $this->previewer->preview(
+        $this->fromPlan,
+        $this->toPlan,
         Money::ofMinor(5000, 'EUR'),
         Money::ofMinor(6000, 'EUR'),
         $this->period,
@@ -65,6 +70,8 @@ it('previews an upgrade: prorated charge now (taxed), effective immediately', fu
 
 it('previews a downgrade: scheduled at period end, nothing due now', function () {
     $preview = $this->previewer->preview(
+        $this->fromPlan,
+        $this->toPlan,
         Money::ofMinor(6000, 'EUR'),  // current 60.00
         Money::ofMinor(5000, 'EUR'),  // new 50.00
         $this->period,

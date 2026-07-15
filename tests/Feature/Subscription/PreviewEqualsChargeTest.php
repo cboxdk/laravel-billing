@@ -29,6 +29,10 @@ beforeEach(function () {
         customer: CustomerType::Consumer,
         seller: new SellerRegistrations(new CountryCode('DK')),
     );
+
+    // Same-family plans, so the transition policy allows the change under test.
+    $this->fromPlan = $this->plan('pro', family: 'standard');
+    $this->toPlan = $this->plan('pro-plus', family: 'standard');
 });
 
 it('preview and charge produce an identical breakdown from identical inputs', function () {
@@ -43,6 +47,8 @@ it('preview and charge produce an identical breakdown from identical inputs', fu
     $charge = $this->calculator->compute($request);
 
     $preview = $this->previewer->preview(
+        $this->fromPlan,
+        $this->toPlan,
         Money::ofMinor(5000, 'EUR'),
         Money::ofMinor(6000, 'EUR'),
         $this->period,
@@ -141,6 +147,8 @@ it('nets a credit on reset when the unused base exceeds the fresh price', functi
 
     // The preview shows the credit and quotes nothing to charge now.
     $preview = $this->previewer->preview(
+        $this->fromPlan,
+        $this->toPlan,
         Money::ofMinor(6000, 'EUR'),
         Money::ofMinor(1000, 'EUR'),
         $this->period,
@@ -170,6 +178,8 @@ it('defers a kept-anchor downgrade: no money now, lands at the period end', func
         ->and($proration->effectiveAt)->toEqual($this->period->end);
 
     $preview = $this->previewer->preview(
+        $this->fromPlan,
+        $this->toPlan,
         Money::ofMinor(6000, 'EUR'),
         Money::ofMinor(5000, 'EUR'),
         $this->period,

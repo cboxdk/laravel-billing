@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cbox\Billing\Subscription\Testing;
 
 use Cbox\Billing\Subscription\Contracts\ForfeitureHandler;
+use Cbox\Billing\Subscription\ValueObjects\PlanSwitchConsequence;
 use Cbox\Billing\Subscription\ValueObjects\SubscriptionTransition;
 use Cbox\Billing\Subscription\WalletForfeiture;
 use Cbox\Billing\Wallet\ValueObjects\RemovalReport;
@@ -12,8 +13,8 @@ use Cbox\Billing\Wallet\ValueObjects\RemovalReport;
 /**
  * A recording {@see ForfeitureHandler} for tests: it captures every transition it is
  * asked to handle and reports which orgs it would have forfeited (those that left
- * without landing), without touching a wallet. Substitute it for the real
- * {@see WalletForfeiture} to assert the lifecycle fires
+ * without landing, and the forfeiting side of a switch), without touching a wallet.
+ * Substitute it for the real {@see WalletForfeiture} to assert the lifecycle fires
  * forfeiture on exactly the right transitions.
  */
 class FakeForfeitureHandler implements ForfeitureHandler
@@ -21,11 +22,27 @@ class FakeForfeitureHandler implements ForfeitureHandler
     /** @var list<SubscriptionTransition> */
     private array $handled = [];
 
+    /** @var list<array{transition: SubscriptionTransition, consequence: PlanSwitchConsequence}> */
+    private array $switches = [];
+
     public function onTransition(SubscriptionTransition $transition, int $now): RemovalReport
     {
         $this->handled[] = $transition;
 
         return new RemovalReport;
+    }
+
+    public function onSwitch(SubscriptionTransition $transition, PlanSwitchConsequence $consequence, int $now): RemovalReport
+    {
+        $this->switches[] = ['transition' => $transition, 'consequence' => $consequence];
+
+        return new RemovalReport;
+    }
+
+    /** @return list<array{transition: SubscriptionTransition, consequence: PlanSwitchConsequence}> */
+    public function switches(): array
+    {
+        return $this->switches;
     }
 
     /** @return list<SubscriptionTransition> */

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Cbox\Billing\Catalog\Enums\PlanStatus;
 use Cbox\Billing\Catalog\Enums\PricingModel;
 use Cbox\Billing\Catalog\InMemoryCatalog;
 use Cbox\Billing\Catalog\ValueObjects\Price;
@@ -48,6 +49,31 @@ it('grandfathers a subscriber pinned to their start date', function () {
 
     expect($pinned->unitAmount->minor())->toBe(5000)
         ->and($current->unitAmount->minor())->toBe(6000);
+});
+
+it('defaults an unfamilied plan to its own singleton family, and defaults to offered', function () {
+    $singleton = new Product('solo', 'Solo');
+    $grouped = new Product('hosted-pro', 'Hosted Pro', family: 'hosted');
+    $legacy = new Product('old', 'Old', family: 'hosted', status: PlanStatus::Legacy);
+
+    expect($singleton->family())->toBe('solo')                 // deny-by-default: its own id
+        ->and($singleton->isOffered())->toBeTrue()
+        ->and($singleton->sameFamilyAs($grouped))->toBeFalse()
+        ->and($grouped->family())->toBe('hosted')
+        ->and($grouped->isLegacy())->toBeFalse()
+        ->and($legacy->isLegacy())->toBeTrue()
+        ->and($legacy->sameFamilyAs($grouped))->toBeTrue();  // status does not change the family
+});
+
+it('enumerates every plan in the catalog', function () {
+    $catalog = new InMemoryCatalog([
+        new Product('hosted-pro', 'Hosted Pro', family: 'hosted'),
+        new Product('on-prem', 'On-Prem', family: 'on-prem'),
+    ]);
+
+    $ids = array_map(static fn (Product $p): string => $p->id, $catalog->products());
+
+    expect($ids)->toEqualCanonicalizing(['hosted-pro', 'on-prem']);
 });
 
 it('computes flat vs per-unit amounts', function () {

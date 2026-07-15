@@ -48,6 +48,11 @@ readonly class InMemoryCatalog implements Catalog
         return $this->products[$id] ?? null;
     }
 
+    public function products(): array
+    {
+        return array_values($this->products);
+    }
+
     public function priceFor(string $productId, DateTimeImmutable $at): ?Price
     {
         $match = null;

@@ -7,6 +7,7 @@ namespace Cbox\Billing\Subscription;
 use Cbox\Billing\Subscription\Contracts\ForfeitureHandler;
 use Cbox\Billing\Subscription\ValueObjects\BillingPeriod;
 use Cbox\Billing\Subscription\ValueObjects\LifecycleOutcome;
+use Cbox\Billing\Subscription\ValueObjects\PlanSwitchConsequence;
 use Cbox\Billing\Subscription\ValueObjects\Subscription;
 use Cbox\Billing\Subscription\ValueObjects\SubscriptionTransition;
 
@@ -53,6 +54,22 @@ readonly class SubscriptionLifecycle
     public function switchTo(Subscription $from, ?Subscription $to, int $now): LifecycleOutcome
     {
         return $this->settle(SubscriptionTransition::between($from, $to), $to, $now);
+    }
+
+    /**
+     * Switch the org from one active plan onto another, applying the credit consequence
+     * of the switch (ADR-0011): by default the outgoing recurring allotment is forfeited
+     * and the incoming plan's granted; a `carryOver` consequence keeps the outgoing
+     * allotment instead. The returned outcome's `forfeited` report is what the reset
+     * zeroed (empty on carry-over); the incoming allotment lands in the wallet as a side
+     * effect. Unlike {@see switchTo()}, this fires on landing (both plans active), not
+     * on leaving without landing.
+     */
+    public function switchPlan(Subscription $from, Subscription $to, PlanSwitchConsequence $consequence, int $now): LifecycleOutcome
+    {
+        $forfeited = $this->forfeiture->onSwitch(SubscriptionTransition::switched($from, $to), $consequence, $now);
+
+        return new LifecycleOutcome($to, $forfeited);
     }
 
     private function settle(SubscriptionTransition $transition, ?Subscription $after, int $now): LifecycleOutcome

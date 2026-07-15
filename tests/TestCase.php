@@ -7,6 +7,7 @@ namespace Cbox\Billing\Tests;
 use Cbox\Billing\Account\Testing\InteractsWithAccountStanding;
 use Cbox\Billing\Account\Testing\InteractsWithBillingCurrencyLock;
 use Cbox\Billing\BillingServiceProvider;
+use Cbox\Billing\Catalog\Testing\InteractsWithCatalog;
 use Cbox\Billing\Entitlement\Audit\Testing\InteractsWithEntitlementAudit;
 use Cbox\Billing\Entitlement\Rollout\Testing\InteractsWithEntitlementRollout;
 use Cbox\Billing\Ledger\Testing\InteractsWithLedger;
@@ -26,6 +27,7 @@ abstract class TestCase extends BaseTestCase
 {
     use InteractsWithAccountStanding;
     use InteractsWithBillingCurrencyLock;
+    use InteractsWithCatalog;
     use InteractsWithDunning;
     use InteractsWithEntitlementAudit;
     use InteractsWithEntitlementRollout;
