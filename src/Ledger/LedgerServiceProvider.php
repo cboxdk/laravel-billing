@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cbox\Billing\Ledger;
 
 use Cbox\Billing\Ledger\Contracts\Ledger;
+use Cbox\Billing\Ledger\Contracts\TwoPhaseLedger;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -17,6 +18,8 @@ class LedgerServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(Ledger::class, static fn (): InMemoryLedger => new InMemoryLedger);
+
+        $this->app->singleton(TwoPhaseLedger::class, static fn (): InMemoryTwoPhaseLedger => new InMemoryTwoPhaseLedger);
     }
 
     public function boot(): void
