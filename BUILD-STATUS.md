@@ -15,8 +15,9 @@ Gate (green on every commit): `pint --test` · `phpstan` level max · `pest` ·
 | **Ledger** | Double-entry `LedgerTransaction` (validates balance/currency), `LedgerLine`, `Direction`, `Ledger` contract, `InMemoryLedger` (append-only, derived balances). | ✅ mechanics + tests |
 | **Wallet / credits** | `CreditGrant` (denomination money-or-unit, type, expiry, priority), `CreditConsumer` (pure burn-down: denomination → expiry → priority → age), `ConsumptionPlan`. | ✅ burn-down engine + tests |
 | **Quote / consequence-preview** | `QuoteBuilder` composes **`cboxdk/laravel-tax`** (seller-of-record routing + per-line tax) + wallet credit → a confirmable `Quote` (lines · totals net/tax/gross/credit/dueNow · `TaxResolution`). **Progressive tax resolution**: an unresolved jurisdiction (e.g. US w/o a state) returns a *tax-pending* quote with an honest reason, never a wrong number. Money interop via `Money::toBrick()/fromBrick()`. | ✅ builder + tests (resolved · credit · pending · reverse-charge) |
+| **Catalog** | Stripe-style `Product`/`Price` split; versioned prices with effective-date ranges → **grandfathering** (a subscriber pins the price effective at their start date; new sales get the current version). `PricingModel` (flat · per-unit); `Catalog` contract + `InMemoryCatalog` (newest-effective-version resolution). Feeds pinned prices into the Quote. | ✅ resolution + grandfathering + catalog→quote tests |
 
-Tests: 18 · assertions: 60.
+Tests: 22 · assertions: 69.
 
 > **Dependencies:** the Quote module composes `cboxdk/laravel-tax` (`^0.1`) and
 > `cboxdk/laravel-geo` (`^0.4`), both from Packagist.
