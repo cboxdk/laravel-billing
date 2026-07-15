@@ -18,8 +18,9 @@ Gate (green on every commit): `pint --test` · `phpstan` level max · `pest` ·
 | **Catalog** | Stripe-style `Product`/`Price` split; versioned prices with effective-date ranges → **grandfathering** (a subscriber pins the price effective at their start date; new sales get the current version). `PricingModel` (flat · per-unit); `Catalog` contract + `InMemoryCatalog` (newest-effective-version resolution). Feeds pinned prices into the Quote. | ✅ resolution + grandfathering + catalog→quote tests |
 | **Seller (of record)** | `SellerEntity` (legal identity + tax registrations + invoice prefix) → produces the tax engine's seller-registrations; `EntityRouter` + `DefaultEntityRouter` routes a buyer to the entity registered in their country (domestic) else a default (cross-border) — the multi-entity routing that drives tax. | ✅ routing + entity→registrations tests |
 | **Invoice** | `Invoicer` fixes a confirmed `Quote` to a legal number from the entity's own `InvoiceNumberSequence` (per-entity, monotonic, gapless) → `Invoice`. Refuses a tax-pending quote (`CannotInvoicePendingQuote`). | ✅ per-entity numbering + confirm→invoice + refuse-pending + end-to-end |
+| **Subscription / plan change** | `BillingPeriod` (day-based) + `ProrationCalculator` (per-period delta × remaining-fraction); `PlanChangePreviewer` → **the upgrade/downgrade consequence-preview**: an upgrade charges a prorated difference now (taxed via the quote engine), effective immediately; a downgrade is scheduled at period end with nothing due now. | ✅ period + proration + upgrade + downgrade tests |
 
-Tests: 27 · assertions: 82.
+Tests: 31 · assertions: 97.
 
 > **Dependencies:** the Quote module composes `cboxdk/laravel-tax` (`^0.1`) and
 > `cboxdk/laravel-geo` (`^0.4`), both from Packagist.

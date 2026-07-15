@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Cbox\Billing\Money;
 
+use Brick\Math\RoundingMode;
 use Brick\Money\Money as BrickMoney;
+use InvalidArgumentException;
 
 /**
  * The platform's money value object — integer minor units + ISO currency, never
@@ -43,6 +45,16 @@ readonly class Money
     public function multipliedBy(int $factor): self
     {
         return new self($this->money->multipliedBy($factor));
+    }
+
+    /** Proportional share `numerator/denominator` (e.g. days remaining / days in period), rounded half-up. */
+    public function proratedBy(int $numerator, int $denominator): self
+    {
+        if ($denominator === 0) {
+            throw new InvalidArgumentException('Cannot prorate by a zero denominator.');
+        }
+
+        return new self($this->money->multipliedBy($numerator)->dividedBy($denominator, RoundingMode::HalfUp));
     }
 
     /** The amount in integer minor units (e.g. cents). */

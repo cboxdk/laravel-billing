@@ -8,6 +8,7 @@ use Cbox\Billing\Catalog\CatalogServiceProvider;
 use Cbox\Billing\Invoice\InvoiceServiceProvider;
 use Cbox\Billing\Metering\MeteringServiceProvider;
 use Cbox\Billing\Quote\QuoteServiceProvider;
+use Cbox\Billing\Subscription\SubscriptionServiceProvider;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -24,6 +25,7 @@ class BillingServiceProvider extends ServiceProvider
         CatalogServiceProvider::class,
         QuoteServiceProvider::class,
         InvoiceServiceProvider::class,
+        SubscriptionServiceProvider::class,
     ];
 
     public function register(): void
