@@ -14,8 +14,15 @@ Gate (green on every commit): `pint --test` · `phpstan` level max · `pest` ·
 | **Money** | `Money` VO wrapping brick/money (integer minor units, immutable). | ✅ |
 | **Ledger** | Double-entry `LedgerTransaction` (validates balance/currency), `LedgerLine`, `Direction`, `Ledger` contract, `InMemoryLedger` (append-only, derived balances). | ✅ mechanics + tests |
 | **Wallet / credits** | `CreditGrant` (denomination money-or-unit, type, expiry, priority), `CreditConsumer` (pure burn-down: denomination → expiry → priority → age), `ConsumptionPlan`. | ✅ burn-down engine + tests |
+| **Quote / consequence-preview** | `QuoteBuilder` composes **`cboxdk/laravel-tax`** (seller-of-record routing + per-line tax) + wallet credit → a confirmable `Quote` (lines · totals net/tax/gross/credit/dueNow · `TaxResolution`). **Progressive tax resolution**: an unresolved jurisdiction (e.g. US w/o a state) returns a *tax-pending* quote with an honest reason, never a wrong number. Money interop via `Money::toBrick()/fromBrick()`. | ✅ builder + tests (resolved · credit · pending · reverse-charge) |
 
-Tests: 12 · assertions: 35.
+Tests: 18 · assertions: 60.
+
+> **Dependency note:** the Quote module pulls `cboxdk/laravel-tax` (+ `laravel-geo`).
+> `laravel-geo` is on Packagist (`^0.4`); `laravel-tax` is public on GitHub but not
+> yet on Packagist, so it is wired via a local **path repository** for now. Once
+> `cboxdk/laravel-tax` is submitted to Packagist, switch the require to `^0.1` and
+> drop the path repo.
 
 ## Next (per the foundation build order)
 

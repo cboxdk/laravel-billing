@@ -27,6 +27,24 @@ readonly class Money
         return new self(BrickMoney::zero($currency));
     }
 
+    /** Wrap a brick/money instance — the interop seam for packages that speak brick (e.g. tax). */
+    public static function fromBrick(BrickMoney $money): self
+    {
+        return new self($money);
+    }
+
+    /** The underlying brick/money instance, for handing to a brick-speaking collaborator. */
+    public function toBrick(): BrickMoney
+    {
+        return $this->money;
+    }
+
+    /** Multiply by an integer factor (e.g. a line quantity) — exact, no rounding. */
+    public function multipliedBy(int $factor): self
+    {
+        return new self($this->money->multipliedBy($factor));
+    }
+
     /** The amount in integer minor units (e.g. cents). */
     public function minor(): int
     {

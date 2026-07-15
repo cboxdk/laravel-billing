@@ -1,7 +1,7 @@
 {
     "bomFormat": "CycloneDX",
     "specVersion": "1.5",
-    "serialNumber": "urn:uuid:f6bbcbc5-42d7-49a3-9772-790ee8c664b2",
+    "serialNumber": "urn:uuid:7a8358ea-7738-4a76-9546-fea9d763540f",
     "version": 1,
     "metadata": {
         "tools": [
@@ -69,12 +69,92 @@
         },
         {
             "type": "library",
+            "bom-ref": "pkg:composer/cboxdk/laravel-geo@v0.4.0",
+            "group": "cboxdk",
+            "name": "laravel-geo",
+            "version": "v0.4.0",
+            "purl": "pkg:composer/cboxdk/laravel-geo@v0.4.0",
+            "description": "Cbox Geo \u2014 a canonical ISO 3166 country/subdivision and ISO 4217 currency reference for Laravel: data-driven jurisdiction lookups and structured addresses bound to stable codes, carrying the tax-relevant attributes downstream billing and tax engines need.",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ]
+        },
+        {
+            "type": "library",
+            "bom-ref": "pkg:composer/cboxdk/laravel-tax@dev-main",
+            "group": "cboxdk",
+            "name": "laravel-tax",
+            "version": "dev-main",
+            "purl": "pkg:composer/cboxdk/laravel-tax@dev-main",
+            "description": "Cbox Tax \u2014 a self-hostable consumption-tax engine for Laravel: it owns the calculation logic (place-of-supply, reverse-charge, rate application, inclusive/exclusive) per jurisdiction and sources only rate data behind a pluggable contract.",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ]
+        },
+        {
+            "type": "library",
+            "bom-ref": "pkg:composer/commerceguys/addressing@v2.2.5",
+            "group": "commerceguys",
+            "name": "addressing",
+            "version": "v2.2.5",
+            "purl": "pkg:composer/commerceguys/addressing@v2.2.5",
+            "description": "Addressing library powered by CLDR and Google's address data.",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ]
+        },
+        {
+            "type": "library",
             "bom-ref": "pkg:composer/dflydev/dot-access-data@v3.0.3",
             "group": "dflydev",
             "name": "dot-access-data",
             "version": "v3.0.3",
             "purl": "pkg:composer/dflydev/dot-access-data@v3.0.3",
             "description": "Given a deep data structure, access data by dot notation.",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ]
+        },
+        {
+            "type": "library",
+            "bom-ref": "pkg:composer/doctrine/collections@2.6.0",
+            "group": "doctrine",
+            "name": "collections",
+            "version": "2.6.0",
+            "purl": "pkg:composer/doctrine/collections@2.6.0",
+            "description": "PHP Doctrine Collections library that adds additional functionality on top of PHP arrays.",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ]
+        },
+        {
+            "type": "library",
+            "bom-ref": "pkg:composer/doctrine/deprecations@1.1.6",
+            "group": "doctrine",
+            "name": "deprecations",
+            "version": "1.1.6",
+            "purl": "pkg:composer/doctrine/deprecations@1.1.6",
+            "description": "A small layer on top of trigger_error(E_USER_DEPRECATED) or PSR-3 logging with options to disable all deprecations or selectively for packages.",
             "licenses": [
                 {
                     "license": {

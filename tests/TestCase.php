@@ -6,6 +6,8 @@ namespace Cbox\Billing\Tests;
 
 use Cbox\Billing\BillingServiceProvider;
 use Cbox\Billing\Metering\Testing\InteractsWithMetering;
+use Cbox\Geo\GeoServiceProvider;
+use Cbox\Tax\TaxServiceProvider;
 use Illuminate\Support\ServiceProvider;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 
@@ -18,6 +20,6 @@ abstract class TestCase extends BaseTestCase
      */
     protected function getPackageProviders($app): array
     {
-        return [BillingServiceProvider::class];
+        return [GeoServiceProvider::class, TaxServiceProvider::class, BillingServiceProvider::class];
     }
 }
