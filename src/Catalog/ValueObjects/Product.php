@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cbox\Billing\Catalog\ValueObjects;
 
 use Cbox\Billing\Catalog\Enums\PlanStatus;
+use Cbox\Billing\Catalog\Enums\ProductShape;
 
 /**
  * A sellable product — the catalog's notion of a plan. Prices are versioned
@@ -17,6 +18,12 @@ use Cbox\Billing\Catalog\Enums\PlanStatus;
  * Deny-by-default: a plan that declares no family is treated as **its own singleton
  * family** (its id), so it shares a family with nothing else and every cross-family
  * rule applies to it (ADR-0010).
+ *
+ * A product also declares a {@see ProductShape} selecting its billing/fulfilment
+ * semantics — metered, rolling recurring, fixed-term (registrar-style), or one-time
+ * (ADR-0015). The shape defaults to {@see ProductShape::Recurring} so existing
+ * catalogs keep their meaning; a registrar-style product is `FixedTerm` and its
+ * catalog is a set of (term × price-kind) price points.
  */
 readonly class Product
 {
@@ -25,7 +32,14 @@ readonly class Product
         public string $name,
         public ?string $family = null,
         public PlanStatus $status = PlanStatus::Offered,
+        public ProductShape $shape = ProductShape::Recurring,
     ) {}
+
+    /** A fixed-term (registrar-style) product: bought for a committed {@see Term} with per-kind pricing. */
+    public function isFixedTerm(): bool
+    {
+        return $this->shape === ProductShape::FixedTerm;
+    }
 
     /**
      * The family this plan belongs to. Falls back to the plan's own id when none is

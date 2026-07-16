@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Cbox\Billing\Catalog\Contracts;
 
+use Cbox\Billing\Catalog\Enums\PriceKind;
 use Cbox\Billing\Catalog\ValueObjects\Price;
 use Cbox\Billing\Catalog\ValueObjects\Product;
+use Cbox\Billing\Catalog\ValueObjects\Term;
 use Cbox\Billing\Subscription\Contracts\TransitionPolicy;
 use DateTimeImmutable;
 
@@ -28,4 +30,13 @@ interface Catalog
 
     /** The price version effective for a product at a given date, or null. */
     public function priceFor(string $productId, DateTimeImmutable $at): ?Price;
+
+    /**
+     * The effective (grandfathered) price for a fixed-term product's (term × kind)
+     * price point at a given date, or null when no such point is offered. This is the
+     * term counterpart to {@see priceFor()}: registering a `P2Y` domain reads the
+     * `Register` price point, renewing it the `Renewal` one, each pinned by effective
+     * date exactly like any versioned price (ADR-0015).
+     */
+    public function termPriceFor(string $productId, Term $term, PriceKind $kind, DateTimeImmutable $at): ?Price;
 }

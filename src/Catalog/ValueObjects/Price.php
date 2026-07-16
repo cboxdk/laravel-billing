@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cbox\Billing\Catalog\ValueObjects;
 
+use Cbox\Billing\Catalog\Enums\PriceKind;
 use Cbox\Billing\Catalog\Enums\PricingModel;
 use Cbox\Billing\Money\Money;
 use DateTimeImmutable;
@@ -12,6 +13,12 @@ use DateTimeImmutable;
  * A versioned price for a product, effective over a date range. Versioning is how
  * grandfathering works: a subscription pins the price effective at its start date,
  * and keeps resolving that version even after newer ones take effect.
+ *
+ * For a fixed-term (registrar-style) product a price also carries a {@see Term} and a
+ * {@see PriceKind}, so the catalog holds one price point per (term × kind) — e.g.
+ * `P2Y`/`Register` distinct from `P1Y`/`Renewal` — each still grandfathered by
+ * effective date (ADR-0015). Recurring/metered prices leave `term` null and `kind`
+ * at {@see PriceKind::Standard}.
  */
 readonly class Price
 {
@@ -22,6 +29,8 @@ readonly class Price
         public Money $unitAmount,
         public DateTimeImmutable $effectiveFrom,
         public ?DateTimeImmutable $effectiveUntil = null,
+        public ?Term $term = null,
+        public PriceKind $kind = PriceKind::Standard,
     ) {}
 
     public function isEffectiveAt(DateTimeImmutable $at): bool

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Cbox\Billing\Catalog;
 
 use Cbox\Billing\Catalog\Contracts\Catalog;
+use Cbox\Billing\Catalog\Enums\PriceKind;
 use Cbox\Billing\Catalog\ValueObjects\Price;
 use Cbox\Billing\Catalog\ValueObjects\Product;
+use Cbox\Billing\Catalog\ValueObjects\Term;
 use DateTimeImmutable;
 
 /**
@@ -58,6 +60,27 @@ readonly class InMemoryCatalog implements Catalog
         $match = null;
 
         foreach ($this->prices[$productId] ?? [] as $price) {
+            if ($price->term !== null) {
+                continue;
+            }
+
+            if ($price->isEffectiveAt($at) && ($match === null || $price->effectiveFrom > $match->effectiveFrom)) {
+                $match = $price;
+            }
+        }
+
+        return $match;
+    }
+
+    public function termPriceFor(string $productId, Term $term, PriceKind $kind, DateTimeImmutable $at): ?Price
+    {
+        $match = null;
+
+        foreach ($this->prices[$productId] ?? [] as $price) {
+            if ($price->term === null || ! $price->term->equals($term) || $price->kind !== $kind) {
+                continue;
+            }
+
             if ($price->isEffectiveAt($at) && ($match === null || $price->effectiveFrom > $match->effectiveFrom)) {
                 $match = $price;
             }
