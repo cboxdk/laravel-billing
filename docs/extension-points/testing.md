@@ -1,7 +1,7 @@
 ---
 title: Testing
 description: Every module ships a dogfooded InteractsWith* trait and Fake* doubles so you can drive it without infrastructure.
-weight: 64
+weight: 65
 ---
 
 # Testing

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cbox\Billing\Licensing;
 
+use Cbox\Billing\Events\LicenseIssued;
 use Cbox\Billing\Licensing\Contracts\RevocationRegistry;
 use Cbox\Billing\Licensing\ValueObjects\IssuedLicense;
 use Cbox\Billing\Licensing\ValueObjects\LicenseIssuanceRequest;
@@ -11,6 +12,7 @@ use Cbox\Billing\Licensing\ValueObjects\LicenseProfile;
 use Cbox\License\Contracts\LicenseIssuer;
 use Cbox\License\ValueObjects\LicenseRequest;
 use DateTimeImmutable;
+use Illuminate\Contracts\Events\Dispatcher;
 
 /**
  * Mints signed licenses from a resolved plan {@see LicenseProfile}. This is the
@@ -32,6 +34,7 @@ readonly class LicenseMint
 {
     public function __construct(
         private LicenseIssuer $issuer,
+        private ?Dispatcher $events = null,
     ) {}
 
     /**
@@ -57,7 +60,7 @@ readonly class LicenseMint
             id: $id,
         ));
 
-        return new IssuedLicense(
+        $license = new IssuedLicense(
             id: $id,
             key: $key,
             customerId: $request->customerId,
@@ -70,6 +73,12 @@ readonly class LicenseMint
             expiresAt: $request->expiresAt,
             licensedDomain: $request->licensedDomain,
         );
+
+        // Fires for every mint, including a reissue() (which runs through issue()) — each
+        // reissue is a distinct, independently-revocable license and merits its own event.
+        $this->events?->dispatch(new LicenseIssued($license));
+
+        return $license;
     }
 
     /**

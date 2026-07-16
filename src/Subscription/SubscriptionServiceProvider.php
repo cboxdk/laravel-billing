@@ -13,6 +13,7 @@ use Cbox\Billing\Subscription\PlanChange\FamilyTransitionPolicy;
 use Cbox\Billing\Subscription\PlanChange\PlanChangePreviewer;
 use Cbox\Billing\Subscription\Proration\ProrationCalculator;
 use Cbox\Billing\Wallet\Contracts\Wallet;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 
@@ -30,7 +31,9 @@ class SubscriptionServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(SubscriptionManager::class, static fn (): SubscriptionManager => new SubscriptionManager);
+        $this->app->singleton(SubscriptionManager::class, static fn (Application $app): SubscriptionManager => new SubscriptionManager(
+            $app->make(Dispatcher::class),
+        ));
 
         $this->app->singleton(TermLifecycle::class, static fn (): TermLifecycle => new TermLifecycle);
 

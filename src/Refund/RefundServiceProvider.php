@@ -15,6 +15,7 @@ use Cbox\Billing\Refund\Contracts\RefundRepository;
 use Cbox\Billing\Refund\Storage\InMemoryChargebackRegister;
 use Cbox\Billing\Refund\Storage\InMemoryRefundRepository;
 use Cbox\Billing\Wallet\Contracts\Wallet;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 
@@ -39,6 +40,7 @@ class RefundServiceProvider extends ServiceProvider
             $app->make(Ledger::class),
             $app->make(PaymentGateway::class),
             $app->make(Wallet::class),
+            $app->make(Dispatcher::class),
         ));
 
         $this->app->singleton(ChargebackHandler::class, static fn (Application $app): DefaultChargebackHandler => new DefaultChargebackHandler(

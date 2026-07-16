@@ -10,6 +10,7 @@ use Cbox\Billing\Invoice\Contracts\InvoiceNumberSequence;
 use Cbox\Billing\Invoice\Contracts\Invoicer;
 use Cbox\Billing\Invoice\Sequences\InMemoryCreditNoteNumberSequence;
 use Cbox\Billing\Invoice\Sequences\InMemoryInvoiceNumberSequence;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 
@@ -31,6 +32,7 @@ class InvoiceServiceProvider extends ServiceProvider
         $this->app->singleton(Invoicer::class, static fn (Application $app): DefaultInvoicer => new DefaultInvoicer(
             $app->make(InvoiceNumberSequence::class),
             $app->make(BillingCurrencyLock::class),
+            $app->make(Dispatcher::class),
         ));
     }
 }

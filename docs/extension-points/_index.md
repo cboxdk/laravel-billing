@@ -17,4 +17,5 @@ in. Nothing in the library is final — you replace a binding, you don't fork.
 | [Contracts & bindings](contracts-and-bindings.md) | The one contract per module and how to rebind it. |
 | [Storage adapters](storage-adapters.md) | `memory` vs `database` per module, and the ClickHouse seam. |
 | [Payment gateways](payment-gateways.md) | Implement `PaymentGateway` and the webhook verifier. |
+| [Domain events](events.md) | The billing lifecycle events you listen for instead of editing the engine. |
 | [Testing](testing.md) | The `InteractsWith*` traits and `Fake*` doubles. |

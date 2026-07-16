@@ -26,6 +26,7 @@ use Cbox\Billing\Payment\Webhook\Storage\InMemoryProcessedEventStore;
 use Cbox\Billing\Payment\Webhook\Storage\InMemorySettledPaymentStore;
 use Cbox\Billing\Payment\Webhook\Verifiers\DenyingWebhookVerifier;
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 
@@ -78,6 +79,7 @@ class PaymentServiceProvider extends ServiceProvider
             $app->make(ProcessedEventStore::class),
             $app->make(SettledPaymentStore::class),
             $app->make(InvoicePaymentApplier::class),
+            $app->make(Dispatcher::class),
         ));
     }
 }

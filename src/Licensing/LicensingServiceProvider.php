@@ -14,6 +14,7 @@ use Cbox\License\Contracts\LicenseIssuer;
 use Cbox\License\Contracts\RevocationListIssuer;
 use Cbox\License\ValueObjects\LicenseLimits;
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 
@@ -49,6 +50,7 @@ class LicensingServiceProvider extends ServiceProvider
         // Key-agnostic services: they resolve the host-bound core issuers lazily.
         $this->app->bind(LicenseMint::class, static fn (Application $app): LicenseMint => new LicenseMint(
             $app->make(LicenseIssuer::class),
+            $app->make(Dispatcher::class),
         ));
 
         $this->app->bind(RevocationPublisher::class, static fn (Application $app): RevocationPublisher => new RevocationPublisher(

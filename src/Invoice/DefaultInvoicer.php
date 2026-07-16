@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cbox\Billing\Invoice;
 
 use Cbox\Billing\Account\Contracts\BillingCurrencyLock;
+use Cbox\Billing\Events\InvoiceIssued;
 use Cbox\Billing\Invoice\Contracts\InvoiceNumberSequence;
 use Cbox\Billing\Invoice\Contracts\Invoicer;
 use Cbox\Billing\Invoice\Exceptions\CannotInvoicePendingQuote;
@@ -12,6 +13,7 @@ use Cbox\Billing\Invoice\ValueObjects\Invoice;
 use Cbox\Billing\Quote\ValueObjects\Quote;
 use Cbox\Billing\Seller\ValueObjects\SellerEntity;
 use DateTimeImmutable;
+use Illuminate\Contracts\Events\Dispatcher;
 
 /**
  * Issues an invoice by fixing a confirmed quote to the next number from the
@@ -29,6 +31,7 @@ readonly class DefaultInvoicer implements Invoicer
     public function __construct(
         private InvoiceNumberSequence $sequence,
         private BillingCurrencyLock $currencyLock,
+        private ?Dispatcher $events = null,
     ) {}
 
     public function issue(Quote $quote, SellerEntity $seller, string $account, DateTimeImmutable $at): Invoice
@@ -37,7 +40,7 @@ readonly class DefaultInvoicer implements Invoicer
             throw CannotInvoicePendingQuote::forEntity($seller);
         }
 
-        return $this->currencyLock->stampAndGuard(
+        $invoice = $this->currencyLock->stampAndGuard(
             $account,
             $quote->currency,
             fn (): Invoice => new Invoice(
@@ -50,5 +53,9 @@ readonly class DefaultInvoicer implements Invoicer
                 $at,
             ),
         );
+
+        $this->events?->dispatch(new InvoiceIssued($invoice, $account));
+
+        return $invoice;
     }
 }

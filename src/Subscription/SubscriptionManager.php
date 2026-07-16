@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Cbox\Billing\Subscription;
 
+use Cbox\Billing\Events\SubscriptionChanged;
+use Cbox\Billing\Events\SubscriptionRenewed;
 use Cbox\Billing\Subscription\Enums\SubscriptionStatus;
 use Cbox\Billing\Subscription\ValueObjects\AddOn;
 use Cbox\Billing\Subscription\ValueObjects\BillingCycle;
@@ -11,6 +13,7 @@ use Cbox\Billing\Subscription\ValueObjects\BillingPeriod;
 use Cbox\Billing\Subscription\ValueObjects\ScheduledChange;
 use Cbox\Billing\Subscription\ValueObjects\Subscription;
 use DateTimeImmutable;
+use Illuminate\Contracts\Events\Dispatcher;
 
 /**
  * Pure lifecycle transitions for a subscription — each returns a new immutable
@@ -20,6 +23,10 @@ use DateTimeImmutable;
  */
 readonly class SubscriptionManager
 {
+    public function __construct(
+        private ?Dispatcher $events = null,
+    ) {}
+
     public function create(string $id, string $organizationId, string $productId, string $priceId, BillingPeriod $period): Subscription
     {
         return new Subscription($id, $organizationId, $productId, $priceId, $period);
@@ -65,7 +72,12 @@ readonly class SubscriptionManager
     /** Schedule (or replace) a price change — mutable until it applies. */
     public function scheduleChange(Subscription $subscription, string $newPriceId, DateTimeImmutable $effectiveAt): Subscription
     {
-        return $this->copy($subscription, pendingChange: new ScheduledChange($newPriceId, $effectiveAt));
+        $change = new ScheduledChange($newPriceId, $effectiveAt);
+        $updated = $this->copy($subscription, pendingChange: $change);
+
+        $this->events?->dispatch(new SubscriptionChanged($updated, $change));
+
+        return $updated;
     }
 
     public function clearScheduledChange(Subscription $subscription): Subscription
@@ -117,17 +129,21 @@ readonly class SubscriptionManager
      */
     public function renew(Subscription $subscription, BillingPeriod $nextPeriod): Subscription
     {
+        // A due cancellation ends the subscription rather than renewing it: this is not a
+        // renewal, so no SubscriptionRenewed fires.
         if ($subscription->cancelAtPeriodEnd) {
             return $this->copy($subscription, status: SubscriptionStatus::Canceled);
         }
 
         $change = $subscription->pendingChange;
 
-        if ($change !== null && $change->effectiveAt <= $nextPeriod->start) {
-            return $this->copy($subscription, priceId: $change->newPriceId, period: $nextPeriod, clearPendingChange: true);
-        }
+        $renewed = $change !== null && $change->effectiveAt <= $nextPeriod->start
+            ? $this->copy($subscription, priceId: $change->newPriceId, period: $nextPeriod, clearPendingChange: true)
+            : $this->copy($subscription, period: $nextPeriod);
 
-        return $this->copy($subscription, period: $nextPeriod);
+        $this->events?->dispatch(new SubscriptionRenewed($subscription, $renewed));
+
+        return $renewed;
     }
 
     /**

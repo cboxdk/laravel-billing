@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cbox\Billing\Payment\Webhook;
 
+use Cbox\Billing\Events\PaymentSettled;
 use Cbox\Billing\Payment\Contracts\InvoicePaymentApplier;
 use Cbox\Billing\Payment\Contracts\ProcessedEventStore;
 use Cbox\Billing\Payment\Contracts\SettledPaymentStore;
@@ -11,6 +12,7 @@ use Cbox\Billing\Payment\Contracts\WebhookIngest;
 use Cbox\Billing\Payment\Enums\WebhookEventType;
 use Cbox\Billing\Payment\ValueObjects\IngestOutcome;
 use Cbox\Billing\Payment\ValueObjects\WebhookEvent;
+use Illuminate\Contracts\Events\Dispatcher;
 
 /**
  * The default exactly-once ingest. It composes the event-id dedup, the settle-once guard,
@@ -36,6 +38,7 @@ readonly class DefaultWebhookIngest implements WebhookIngest
         private ProcessedEventStore $processed,
         private SettledPaymentStore $settled,
         private InvoicePaymentApplier $applier,
+        private ?Dispatcher $events = null,
     ) {}
 
     public function ingest(WebhookEvent $event): IngestOutcome
@@ -67,12 +70,18 @@ readonly class DefaultWebhookIngest implements WebhookIngest
 
         // Apply the effect FIRST. If the host crashes here nothing below runs, so neither
         // the settle claim nor the event id persists and the re-delivery re-applies once.
-        $this->applier->markPaid($event->reference, $event->amount, $event->toPaymentResult());
+        $result = $event->toPaymentResult();
+        $this->applier->markPaid($event->reference, $event->amount, $result);
 
         // Commit the guards. In production these commit in the same transaction as the
         // effect above, so the claim + effect are one atomic, exactly-once unit.
         $this->settled->settle($event->reference);
         $this->processed->remember($event->id);
+
+        // Announce the settlement only on the applying call — a duplicate event or an
+        // already-settled reference returned above without reaching here, so this fires
+        // exactly once per settled reference.
+        $this->events?->dispatch(new PaymentSettled($event->reference, $event->amount, $result));
 
         return IngestOutcome::applied($event);
     }

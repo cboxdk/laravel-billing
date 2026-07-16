@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cbox\Billing\Refund;
 
+use Cbox\Billing\Events\CreditNoteIssued;
 use Cbox\Billing\Invoice\Contracts\CreditNoteNumberSequence;
 use Cbox\Billing\Invoice\ValueObjects\CreditNote;
 use Cbox\Billing\Ledger\Contracts\Ledger;
@@ -20,6 +21,7 @@ use Cbox\Billing\Refund\ValueObjects\Refund;
 use Cbox\Billing\Refund\ValueObjects\RefundRequest;
 use Cbox\Billing\Wallet\Contracts\Wallet;
 use Cbox\Billing\Wallet\ValueObjects\CreditGrant;
+use Illuminate\Contracts\Events\Dispatcher;
 
 /**
  * The default voluntary-refund flow. For a request it:
@@ -49,6 +51,7 @@ readonly class DefaultRefunder implements Refunder
         private Ledger $ledger,
         private PaymentGateway $gateway,
         private Wallet $wallet,
+        private ?Dispatcher $events = null,
     ) {}
 
     public function refund(RefundRequest $request): Refund
@@ -126,6 +129,10 @@ readonly class DefaultRefunder implements Refunder
         );
 
         $this->refunds->save($refund);
+
+        // Fires once per issued credit note: the idempotent replay above returns before
+        // reaching here, so a retried/re-delivered refund never re-announces the note.
+        $this->events?->dispatch(new CreditNoteIssued($creditNote));
 
         return $refund;
     }
