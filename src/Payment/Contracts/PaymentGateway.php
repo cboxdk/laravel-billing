@@ -57,6 +57,16 @@ interface PaymentGateway
     public function createSetupIntent(SetupIntentRequest $request): SetupIntentResult;
 
     /**
+     * Create (or return) the gateway customer object that saved payment methods and
+     * off-session charges attach to, and return its gateway reference (e.g. Stripe
+     * `cus_…`). `$account` is the host's stable account key — the gateway stamps it into
+     * the customer's metadata so the object reconciles back to the account from the
+     * gateway dashboard. The host persists the account→reference mapping; this call only
+     * mints (or re-resolves) the object at the gateway.
+     */
+    public function createCustomer(string $account, ?string $email = null, ?string $name = null): string;
+
+    /**
      * The payment methods saved for `$account`, at most one of which is the default the
      * off-session renewal charges.
      *
@@ -75,4 +85,14 @@ interface PaymentGateway
      * `$account`. The method must already be attached.
      */
     public function setDefaultPaymentMethod(string $account, string $paymentMethodId): void;
+
+    /**
+     * Detach the vaulted method `$paymentMethodId` so future off-session renewals can no
+     * longer charge it. This is idempotent: detaching an already-detached (or never-known)
+     * method is a no-op and must not error, so a retried teardown collapses cleanly. A
+     * vault-less gateway treats the whole call as a no-op. Some gateways vault a method
+     * globally rather than per-customer and detach it outright, so for them `$account` is
+     * advisory / audit-only — the method is removed regardless of which account asks.
+     */
+    public function detachPaymentMethod(string $account, string $paymentMethodId): void;
 }

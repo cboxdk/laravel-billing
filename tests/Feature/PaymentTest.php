@@ -107,6 +107,51 @@ it('attaches, lists, and re-defaults payment methods per account', function () {
         ->and($methods[1]->isDefault)->toBeTrue();
 });
 
+it('records and re-defaults, then detaches payment methods idempotently', function () {
+    $gateway = new FakePaymentGateway(PaymentResult::succeeded('ch_1'));
+
+    $gateway->attachPaymentMethod('org_1', 'pm_a');
+    $gateway->attachPaymentMethod('org_1', 'pm_b');
+
+    $gateway->detachPaymentMethod('org_1', 'pm_a');
+
+    expect($gateway->paymentMethods('org_1'))->toHaveCount(1)
+        ->and($gateway->paymentMethods('org_1')[0]->id)->toBe('pm_b')
+        ->and($gateway->detached)->toBe([['account' => 'org_1', 'paymentMethodId' => 'pm_a']]);
+
+    // Idempotent: detaching the same (already-detached) method again does not error and
+    // leaves the vault unchanged — it only records the second call.
+    $gateway->detachPaymentMethod('org_1', 'pm_a');
+
+    expect($gateway->paymentMethods('org_1'))->toHaveCount(1)
+        ->and($gateway->detached)->toHaveCount(2);
+});
+
+it('mints a fake customer reference once per account and remembers it', function () {
+    $gateway = new FakePaymentGateway(PaymentResult::succeeded('ch_1'));
+
+    $first = $gateway->createCustomer('org_1', 'ops@example.test', 'Org One');
+    $again = $gateway->createCustomer('org_1');
+
+    expect($first)->toBe('cus_fake_org_1')
+        ->and($again)->toBe($first) // create-or-return: same reference
+        ->and($gateway->customers)->toBe(['org_1' => 'cus_fake_org_1'])
+        ->and($gateway->createCustomer('org_2'))->toBe('cus_fake_org_2'); // scoped per account
+});
+
+it('mints a deterministic local customer reference and detaches as a no-op on the manual gateway', function () {
+    $gateway = new ManualPaymentGateway;
+
+    expect($gateway->createCustomer('DK-000001'))->toBe('manual:DK-000001')
+        ->and($gateway->createCustomer('DK-000001', 'ops@example.test', 'Acme'))->toBe('manual:DK-000001');
+
+    // Vault-less: detaching is a safe no-op, callable repeatedly without error.
+    $gateway->detachPaymentMethod('DK-000001', 'offline_1');
+    $gateway->detachPaymentMethod('DK-000001', 'offline_1');
+
+    expect($gateway->paymentMethods('DK-000001'))->toBe([]);
+});
+
 it('creates an honest off-line intent on the manual gateway: no element, no client secret', function () {
     $gateway = new ManualPaymentGateway;
 

@@ -24,7 +24,9 @@ use Cbox\Billing\Payment\ValueObjects\SetupIntentResult;
  * {@see PaymentIntentStatus} (default {@see PaymentIntentStatus::Succeeded}; pass
  * {@see PaymentIntentStatus::RequiresAction} to drive an SCA flow), a publishable key, and
  * a client secret derived from the request's idempotency key. Payment methods are stored
- * per account so attach/setDefault/list behave like a small vault the suite can assert on.
+ * per account so attach/setDefault/list/detach behave like a small vault the suite can
+ * assert on, and customer creation is remembered per account so a repeated call resolves to
+ * the same fake reference.
  */
 class FakePaymentGateway implements PaymentGateway
 {
@@ -39,6 +41,12 @@ class FakePaymentGateway implements PaymentGateway
 
     /** @var list<SetupIntentRequest> */
     public array $setupIntents = [];
+
+    /** @var array<string, string> */
+    public array $customers = [];
+
+    /** @var list<array{account: string, paymentMethodId: string}> */
+    public array $detached = [];
 
     /** @var array<string, list<PaymentMethod>> */
     private array $methods = [];
@@ -95,6 +103,13 @@ class FakePaymentGateway implements PaymentGateway
         );
     }
 
+    public function createCustomer(string $account, ?string $email = null, ?string $name = null): string
+    {
+        // Mint once per account and remember it, so a repeated call resolves to the same
+        // reference — mirroring a gateway's create-or-return customer semantics.
+        return $this->customers[$account] ??= 'cus_fake_'.$account;
+    }
+
     /**
      * @return list<PaymentMethod>
      */
@@ -135,5 +150,18 @@ class FakePaymentGateway implements PaymentGateway
             ),
             $this->methods[$account] ?? [],
         );
+    }
+
+    public function detachPaymentMethod(string $account, string $paymentMethodId): void
+    {
+        // Record every call so a suite can assert the teardown fired…
+        $this->detached[] = ['account' => $account, 'paymentMethodId' => $paymentMethodId];
+
+        // …then drop it from the vault. Filtering is inherently idempotent: detaching an
+        // already-detached (or never-attached) method simply removes nothing.
+        $this->methods[$account] = array_values(array_filter(
+            $this->methods[$account] ?? [],
+            static fn (PaymentMethod $method): bool => $method->id !== $paymentMethodId,
+        ));
     }
 }

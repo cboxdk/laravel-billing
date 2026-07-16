@@ -33,6 +33,34 @@ Bind it over the default:
 $this->app->bind(PaymentGateway::class, StripeGateway::class);
 ```
 
+## Stored customers & saved methods
+
+Beyond a single charge, the seam manages the gateway objects that off-session
+renewals bill against. `createCustomer` mints (or re-resolves) the gateway customer
+that saved methods and off-session charges attach to, stamping the host's account key
+into its metadata for dashboard reconciliation and returning its reference (e.g.
+Stripe `cus_…`); the host persists the account→reference mapping. `createSetupIntent`
+returns a client secret the frontend confirms to vault a method, and
+`attachPaymentMethod` / `paymentMethods` / `setDefaultPaymentMethod` list and manage
+what is vaulted. `detachPaymentMethod` removes a vaulted method so future renewals can
+no longer charge it — it is idempotent (detaching an already-detached method must not
+error), and a vault-less gateway treats it as a no-op.
+
+```php
+$customer = $gateway->createCustomer($account, $email, $name); // "cus_…"
+
+// After the frontend confirms a SetupIntent element:
+$method = $gateway->attachPaymentMethod($account, $paymentMethodId);
+$gateway->setDefaultPaymentMethod($account, $method->id);
+
+// Tear the method down when the customer removes it:
+$gateway->detachPaymentMethod($account, $method->id);
+```
+
+`ManualPaymentGateway` implements this honestly for a vault-less gateway:
+`createCustomer` returns a deterministic local reference (`'manual:'.$account`) with
+no external round-trip, and `detachPaymentMethod` is a genuine no-op.
+
 ## Verify webhooks
 
 Webhook authentication is the adapter's job. Implement `WebhookVerifier` to

@@ -81,6 +81,17 @@ readonly class ManualPaymentGateway implements PaymentGateway
     }
 
     /**
+     * A manual gateway has no external customer store to mint an object in, so there is
+     * nothing to call out to. It returns a deterministic local reference derived from the
+     * account (`'manual:'.$account`) — a stable, self-describing handle the host can persist
+     * exactly like a real `cus_…`, with no round-trip and no hidden state.
+     */
+    public function createCustomer(string $account, ?string $email = null, ?string $name = null): string
+    {
+        return 'manual:'.$account;
+    }
+
+    /**
      * A manual gateway has no card vault, so an account never has saved methods.
      *
      * @return list<PaymentMethod>
@@ -114,5 +125,15 @@ readonly class ManualPaymentGateway implements PaymentGateway
     public function setDefaultPaymentMethod(string $account, string $paymentMethodId): void
     {
         // No card vault, single off-line method: nothing to reassign.
+    }
+
+    /**
+     * A manual gateway vaults nothing, so there is no stored method to remove: detaching is
+     * a genuine no-op. It is safe to call repeatedly (the idempotency the contract requires
+     * is trivially satisfied when nothing was ever stored).
+     */
+    public function detachPaymentMethod(string $account, string $paymentMethodId): void
+    {
+        // No card vault: nothing to detach.
     }
 }
