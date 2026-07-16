@@ -183,4 +183,40 @@ return [
         'checkpoint_store' => env('CBOX_BILLING_RECONCILE_CHECKPOINT', 'memory'),
     ],
 
+    /*
+     * On-prem / self-hosted license issuing. Billing mints a signed, offline-verifiable
+     * license from a licensable plan; the self-hosted app verifies it. The issuer
+     * PRIVATE key is NOT configured here — the host constructs the crypto core's
+     * `Ed25519LicenseIssuer` / `Ed25519RevocationListIssuer` from its own secret
+     * config and binds them; this package is key-agnostic.
+     */
+    'licensing' => [
+
+        /*
+         * The licensable-plan map, keyed by plan / product id. Deny-by-default: a plan
+         * absent from this map is NOT licensable and cannot be minted. Each entry
+         * declares the entitlements (opaque capability strings from
+         * `Cbox\License\Capabilities`) and the quantitative limits the plan's license
+         * grants; a `null` / omitted limit means unlimited for that dimension. Empty by
+         * default — nothing is licensable until the host declares a profile. Example:
+         *
+         *   'enterprise' => [
+         *       'entitlements' => [Capabilities::SSO, Capabilities::MULTI_TENANT_PLATFORM],
+         *       'limits' => ['organizations' => 25, 'seats' => 500, 'environments' => 5],
+         *   ],
+         *
+         * @var array<string, array{entitlements?: list<string>, limits?: array{organizations?: int|null, seats?: int|null, environments?: int|null}}>
+         */
+        'profiles' => [],
+
+        /*
+         * Grace buffer, in seconds, that `SubscriptionLicensePolicy` adds on top of a
+         * subscription's paid-period end when deriving a renewed license's `expiresAt`.
+         * Covers the lag between a renewal being paid and the new license being pulled by
+         * the deployment, without letting the artifact outlive the paid period by more
+         * than this buffer. `0` (default) pins expiry exactly to the period end.
+         */
+        'grace_seconds' => (int) env('CBOX_BILLING_LICENSE_GRACE_SECONDS', 0),
+    ],
+
 ];

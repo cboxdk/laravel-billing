@@ -42,6 +42,38 @@ package's.
 | `Entitlement\Contracts\EntitlementWriter` | Entitlement | `NullEntitlementWriter` (host binds the real one) |
 | `Entitlement\Rollout\Contracts\EntitlementRollout` | Entitlement | `DefaultEntitlementRollout` |
 | `Entitlement\Audit\Contracts\EntitlementAudit` | Entitlement | `DefaultEntitlementAudit` |
+| `Licensing\Contracts\LicenseProfileResolver` | Licensing | `ConfiguredLicenseProfileResolver` (empty map, deny-by-default) |
+| `Licensing\Contracts\IssuedLicenseStore` | Licensing | `InMemoryIssuedLicenseStore` |
+| `Licensing\Contracts\RevocationRegistry` | Licensing | `InMemoryRevocationRegistry` |
+
+## The unbound licensing key contracts
+
+The licensing module deliberately leaves **two** crypto-core contracts unbound,
+because they hold the issuer **private key** — a host secret, not a package default:
+
+| Contract | Module | Default binding |
+| --- | --- | --- |
+| `Cbox\License\Contracts\LicenseIssuer` | Licensing | **none** — host binds `Ed25519LicenseIssuer($privateKey)` |
+| `Cbox\License\Contracts\RevocationListIssuer` | Licensing | **none** — host binds `Ed25519RevocationListIssuer($privateKey)` |
+
+`LicenseMint` and `RevocationPublisher` resolve these lazily, so resolving either one
+before the host has bound the key surfaces a clear container error rather than minting
+with no key:
+
+```php
+use Cbox\License\Contracts\LicenseIssuer;
+use Cbox\License\Contracts\RevocationListIssuer;
+use Cbox\License\Ed25519LicenseIssuer;
+use Cbox\License\Ed25519RevocationListIssuer;
+
+public function register(): void
+{
+    $this->app->singleton(LicenseIssuer::class, fn () => new Ed25519LicenseIssuer(config('services.licensing.private_key')));
+    $this->app->singleton(RevocationListIssuer::class, fn () => new Ed25519RevocationListIssuer(config('services.licensing.private_key')));
+}
+```
+
+See [Licensing](../licensing/_index.md).
 
 ## Rebinding
 

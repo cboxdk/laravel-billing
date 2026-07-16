@@ -9,6 +9,7 @@ use Cbox\Billing\Catalog\CatalogServiceProvider;
 use Cbox\Billing\Entitlement\EntitlementServiceProvider;
 use Cbox\Billing\Invoice\InvoiceServiceProvider;
 use Cbox\Billing\Ledger\LedgerServiceProvider;
+use Cbox\Billing\Licensing\LicensingServiceProvider;
 use Cbox\Billing\Metering\MeteringServiceProvider;
 use Cbox\Billing\Payment\PaymentServiceProvider;
 use Cbox\Billing\Pricing\PricingServiceProvider;
@@ -44,6 +45,7 @@ class BillingServiceProvider extends ServiceProvider
         ReportingServiceProvider::class,
         LedgerServiceProvider::class,
         ReconciliationServiceProvider::class,
+        LicensingServiceProvider::class,
     ];
 
     public function register(): void

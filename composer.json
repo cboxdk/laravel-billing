@@ -4,11 +4,19 @@
     "description": "Cbox Billing — the billing engine for Laravel — a gateway-agnostic library: catalog, subscriptions, real-time usage metering with hard limits, a double-entry ledger, invoicing, and pricing operations.",
     "keywords": ["cbox", "billing", "subscriptions", "metering", "usage-based", "ledger", "invoicing", "laravel"],
     "license": "MIT",
+    "repositories": [
+        {
+            "// TODO(release)": "drop this vcs repositories entry once cboxdk/license is on Packagist",
+            "type": "vcs",
+            "url": "https://github.com/cboxdk/license"
+        }
+    ],
     "require": {
         "php": "^8.4",
         "brick/money": "^0.14",
         "cboxdk/laravel-geo": "^0.4",
         "cboxdk/laravel-tax": "^0.1",
+        "cboxdk/license": "^0.1",
         "illuminate/cache": "^13.0",
         "illuminate/contracts": "^13.0",
         "illuminate/database": "^13.0",

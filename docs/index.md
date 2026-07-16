@@ -47,6 +47,9 @@ trues the ledger up from the event log. The full rationale is in
 - **[Cookbook](cookbook/_index.md)** — task-first recipes: enforce a hard limit,
   grant and burn credits, reconcile usage, preview a plan change, ingest a
   payment webhook, roll out a plan entitlement.
+- **[Licensing](licensing/_index.md)** — the on-prem license issuer: mint a
+  signed, offline-verifiable license from an enterprise plan, renew it on
+  subscription renewal, and revoke it (verifier lives in the consuming app).
 - **[Extension points](extension-points/_index.md)** — the contracts you bind,
   storage adapters, gateway adapters, and the dogfooded testing seams.
 - **[Configuration](configuration/_index.md)** — every `config/billing.php` key.

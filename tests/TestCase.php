@@ -11,6 +11,7 @@ use Cbox\Billing\Catalog\Testing\InteractsWithCatalog;
 use Cbox\Billing\Entitlement\Audit\Testing\InteractsWithEntitlementAudit;
 use Cbox\Billing\Entitlement\Rollout\Testing\InteractsWithEntitlementRollout;
 use Cbox\Billing\Ledger\Testing\InteractsWithLedger;
+use Cbox\Billing\Licensing\Testing\InteractsWithLicensing;
 use Cbox\Billing\Metering\Testing\InteractsWithMetering;
 use Cbox\Billing\Payment\Dunning\Testing\InteractsWithDunning;
 use Cbox\Billing\Payment\Testing\InteractsWithWebhooks;
@@ -32,6 +33,7 @@ abstract class TestCase extends BaseTestCase
     use InteractsWithEntitlementAudit;
     use InteractsWithEntitlementRollout;
     use InteractsWithLedger;
+    use InteractsWithLicensing;
     use InteractsWithMetering;
     use InteractsWithReconciliation;
     use InteractsWithRefunds;

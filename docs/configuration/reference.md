@@ -65,6 +65,18 @@ See [Entitlements](../core-concepts/entitlements.md).
 See [Reconciliation](../core-concepts/reconciliation.md) and
 [ADR-0003](../../adr/0003-convergent-reconciliation.md).
 
+## `licensing`
+
+| Key | Env | Default | Effect |
+| --- | --- | --- | --- |
+| `profiles` | — | `[]` | The licensable-plan map, keyed by plan / product id; each entry declares `entitlements` (opaque capability strings) and `limits` (`organizations` / `seats` / `environments`; `null` = unlimited). **Deny-by-default:** a plan absent from the map is not licensable and cannot be minted. Empty by default. |
+| `grace_seconds` | `CBOX_BILLING_LICENSE_GRACE_SECONDS` | `0` | Buffer `SubscriptionLicensePolicy` adds on top of a subscription's paid-period end when deriving a renewed license's `expiresAt`, covering the pull lag without outliving the paid period by more than this. |
+
+The issuer **private key is not configured here** — the host binds the crypto core's
+`Ed25519LicenseIssuer` / `Ed25519RevocationListIssuer` from its own secret config.
+See [Licensing](../licensing/_index.md) and
+[contracts & bindings](../extension-points/contracts-and-bindings.md).
+
 ## Related
 
 - [Installation](../getting-started/installation.md)

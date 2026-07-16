@@ -31,12 +31,18 @@ Gate (green on every commit): `pint --test` · `phpstan` level max · `pest` ·
 | **Entitlement** | `EntitlementProjector` → coarse tier via the `EntitlementWriter` port (decoupled from cbox-id). Scoped **per (org, product)** — an org holds many concurrent product entitlements. | ✅ |
 | **Reporting** | `MrrCalculator` (MRR + ARR per currency) · `ChurnCalculator`. | ✅ |
 | **Reconciliation (ADR-0003)** | Convergent reconciliation: per-`(org, meter)` cumulative-delta-vs-checkpoint (no per-event replay). `Reconciler`/`DefaultReconciler` post `sum(events) − checkpoint.total` into the `Ledger` idempotently (natural `PostingKey`, ADR-0002). Guards: **ingest-lag clamp** (`ceiling = now − lag`), **aged-out bucketing** (usage older than the window → `aged_out` account, never dropped), **per-entity locked checkpoint** with concurrency errors **rethrown** and other per-entity errors reported+skipped. `CheckpointStore` (contract · `InMemoryCheckpointStore` default · durable `DatabaseCheckpointStore` migration · `FakeCheckpointStore`). `billing:reconcile` command. Dogfooded `InteractsWithReconciliation`. | ✅ |
+| **Licensing (on-prem issuer)** | Wraps the crypto core `cboxdk/license` (never reimplements crypto): mints a signed, offline-verifiable license from a licensable plan. `LicenseProfile` (plan → entitlements + `LicenseLimits`); `LicenseProfileResolver`/`ConfiguredLicenseProfileResolver` (**deny-by-default**: unknown plan → `null`, cannot mint; empty map default). `LicenseMint::issue()` builds the core `LicenseRequest`, signs via injected `LicenseIssuer`, pins the id so record↔`lid` agree; `reissue()` re-mints same deployment/profile with an extended window + fresh id (renewal). `IssuedLicense` record + `IssuedLicenseStore`/`InMemoryIssuedLicenseStore` (by id/customer/deployment). `RevocationRegistry`/`InMemoryRevocationRegistry` + `RevocationPublisher` (signs the current list via injected `RevocationListIssuer`). `SubscriptionLicensePolicy` (pure period-end + grace → `expiresAt`). **Key-agnostic**: the provider does NOT bind `LicenseIssuer`/`RevocationListIssuer` — the host binds them from private-key config. Dogfooded `InteractsWithLicensing` (real Ed25519 keypair, round-trip verified with the core verifier). | ✅ |
 
-Tests: 277 · assertions: 915.
+Tests: 310 · assertions: 1072.
 
 > **Dependencies:** composes `cboxdk/laravel-tax` (`^0.1`) and `cboxdk/laravel-geo`
-> (`^0.4`) from Packagist. Gateway adapters (`laravel-billing-stripe`,
+> (`^0.4`) from Packagist, plus the framework-agnostic crypto core `cboxdk/license`
+> (`^0.1`) for the licensing issuer. Gateway adapters (`laravel-billing-stripe`,
 > `-mollie`) are separate opt-in packages.
+>
+> **Release note:** `cboxdk/license` is pulled via a `vcs` `repositories` entry in
+> `composer.json` until it lands on Packagist (see the `TODO(release)` marker) — drop
+> that entry once it is published.
 
 ## Remaining
 
