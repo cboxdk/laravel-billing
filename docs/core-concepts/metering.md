@@ -85,6 +85,7 @@ readonly class MeterPolicy
         public ?float $multiplier = null,
         public bool $unlimited = false,
         public OverageBehaviour $overage = OverageBehaviour::Block,
+        public Aggregation $aggregation = Aggregation::Sum,
     ) {}
 }
 ```
@@ -149,6 +150,45 @@ event id, and sum drives invoice computation. Storage is pluggable:
 adapter. Dedup keys are kept for `metering.dedup_window_days`; late duplicates
 outside the window are caught by [reconciliation](reconciliation.md), not
 double-counted.
+
+## Billable-metric aggregations
+
+A meter's raw events collapse into ONE billable quantity for a period via an
+`Aggregation`, resolved by `EventLog::aggregate($org, $meter, $fromMs, $toMs, $agg)`:
+
+| Aggregation | Billable quantity |
+| --- | --- |
+| `Count` | number of events |
+| `Sum` | sum of every event's `value` (the classic usage total) |
+| `Max` | the largest single `value` (e.g. peak seats) |
+| `UniqueCount` | number of **distinct** `uniqueKey`s (e.g. unique active users) |
+| `Latest` | the `value` of the most recent event — a gauge's last reading |
+| `WeightedSum` | sum of `value × weight` (a cost-weighted total) |
+
+`UsageEvent` carries the fields these read: `value` (the measurement), plus the
+optional `uniqueKey` (counted distinctly by `UniqueCount`; a null key contributes no
+distinct value) and `weight` (the `WeightedSum` multiplier, default `1`). Both
+optional fields are trailing and defaulted, so existing ingest is unchanged and
+`WeightedSum` with no weights equals a plain `Sum`. `sum()` is retained as the
+shorthand for `aggregate(Sum)` and both `InMemoryEventLog` and `DatabaseEventLog`
+(the latter computing every aggregation **in the database** — `count`, `sum(value)`,
+`max(value)`, `count(distinct unique_key)`, latest-by-timestamp, `sum(value*weight)`)
+implement it. An empty window yields `0`, `Max`/`Latest` included.
+
+The aggregation choice lives on the meter's `MeterPolicy` (`aggregation`, defaulting
+to `Sum`). `BillableUsageResolver` composes the two halves — aggregate a period's
+usage per the policy, then price the resulting quantity through a `Price` (flat,
+per-unit, or a [tiered model](catalog-and-pricing.md#pricing-models)):
+
+```php
+$resolver = new BillableUsageResolver($eventLog);
+
+$quantity = $resolver->quantity($org, 'seats', $from, $to, $policy);       // events → aggregate
+$charge   = $resolver->charge($org, 'seats', $from, $to, $policy, $price);  // → tiered price → Money
+```
+
+This is the usage-events → aggregate → tiered-price → Money pipeline, each side
+swappable behind its contract.
 
 ## Testing
 

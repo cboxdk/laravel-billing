@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cbox\Billing\Metering\ValueObjects;
 
+use Cbox\Billing\Metering\Enums\Aggregation;
 use Cbox\Billing\Metering\Enums\OverageBehaviour;
 
 /**
@@ -31,6 +32,11 @@ use Cbox\Billing\Metering\Enums\OverageBehaviour;
  *  - `unlimited`  — the dimension has no cap and no cost; it zeroes cost EXPLICITLY
  *                   (never via a fallback multiplier) and is never blocked.
  *  - `overage`    — behaviour once the isolated allowance is exhausted.
+ *  - `aggregation`— how the meter's raw usage events collapse into ONE billable
+ *                   quantity for a period (count / sum / max / unique-count / latest /
+ *                   weighted-sum). Defaults to {@see Aggregation::Sum} — the historical
+ *                   behaviour — so existing policies are unchanged. This is the choice
+ *                   a billable-quantity resolver reads before pricing.
  *
  * Immutable. Build through the named constructors so each shape is unambiguous.
  */
@@ -42,6 +48,7 @@ readonly class MeterPolicy
         public ?float $multiplier = null,
         public bool $unlimited = false,
         public OverageBehaviour $overage = OverageBehaviour::Block,
+        public Aggregation $aggregation = Aggregation::Sum,
     ) {}
 
     /**
@@ -52,6 +59,7 @@ readonly class MeterPolicy
         int $allowance,
         float $multiplier,
         OverageBehaviour $overage = OverageBehaviour::Block,
+        Aggregation $aggregation = Aggregation::Sum,
     ): self {
         return new self(
             enabled: true,
@@ -59,6 +67,7 @@ readonly class MeterPolicy
             multiplier: $multiplier,
             unlimited: false,
             overage: $overage,
+            aggregation: $aggregation,
         );
     }
 
@@ -97,6 +106,7 @@ readonly class MeterPolicy
             multiplier: $this->multiplier,
             unlimited: $this->unlimited,
             overage: $this->overage,
+            aggregation: $this->aggregation,
         );
     }
 

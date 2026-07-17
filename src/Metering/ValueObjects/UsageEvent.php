@@ -10,6 +10,16 @@ namespace Cbox\Billing\Metering\ValueObjects;
  * real event, stable across retries) so the same usage is counted exactly once.
  * `occurredAt` is a millisecond epoch timestamp, passed explicitly for
  * deterministic aggregation and testing.
+ *
+ * `value` carries the numeric measurement the `Sum`/`Max`/`Latest`/`WeightedSum`
+ * aggregations read (pass 1 for a plain per-event count). Two optional fields feed
+ * the richer billable-metric aggregations, both trailing and defaulted so existing
+ * ingest is unaffected:
+ *
+ *  - `uniqueKey` — the dimension counted DISTINCTLY by `UniqueCount` (e.g. a user id
+ *                  for unique-active-users). Null means the event carries no such key.
+ *  - `weight`    — the per-event multiplier `WeightedSum` applies (`value × weight`);
+ *                  defaults to 1 so a weighted sum with no weights equals a plain sum.
  */
 readonly class UsageEvent
 {
@@ -20,5 +30,7 @@ readonly class UsageEvent
         public string $service,
         public int $value,
         public int $occurredAt,
+        public ?string $uniqueKey = null,
+        public int $weight = 1,
     ) {}
 }
