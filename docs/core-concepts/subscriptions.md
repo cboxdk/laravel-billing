@@ -18,18 +18,120 @@ wires lifecycle transitions to side effects such as wallet forfeiture.
 
 ```php
 $sub = $manager->create($id, $org, $productId, $priceId, $period);
-$sub = $manager->cancelAtPeriodEnd($sub);   // flag; capacity retained until period end
-$sub = $manager->resume($sub);              // clear the flag
-$sub = $manager->cancelNow($sub);           // immediate Canceled
+$sub = $manager->cancelAtPeriodEnd($sub);   // → NonRenewing; capacity retained until period end
+$sub = $manager->resume($sub);              // NonRenewing → Active (clear the pending cancel)
+$sub = $manager->cancelNow($sub);           // immediate → Canceled
 $sub = $manager->scheduleChange($sub, $newPriceId, $effectiveAt); // staged, mutable
 $sub = $manager->clearScheduledChange($sub);
-$sub = $manager->renew($sub, $nextPeriod);  // applies a due scheduled change, or cancels if flagged
+$sub = $manager->renew($sub, $nextPeriod);  // applies a due scheduled change, or enacts a due cancel
 ```
 
 A **scheduled change** (`ScheduledChange`) is staged and remains **mutable /
 cancelable until its effective date** — a downgrade at period end moves no money
 now and keeps paid capacity until then. `renew` applies a due change or, if the
-subscription was flagged to cancel at period end, transitions it to `Canceled`.
+subscription is `NonRenewing`, transitions it to `Canceled`.
+
+## State machine
+
+`SubscriptionStatus` is a first-class state machine — the original `Active`/`Canceled`
+pair extended **additively** with the states a real subscription passes through:
+
+| State | Serving? | Meaning |
+| --- | --- | --- |
+| `Trialing` | yes | Created with a trial; no charge yet. Converts at trial end. |
+| `Active` | yes | The normal paying state. |
+| `PastDue` | yes | A payment failed; still serving during dunning. |
+| `Paused` | no | Temporarily suspended; **no billing** while paused. |
+| `NonRenewing` | yes | A period-end cancellation is scheduled; still serving until it renews. |
+| `Canceled` | no | Terminal; the org is on no plan. |
+
+`isActive()` is true for the four **serving** states (so entitlement projection and
+forfeiture treat a `NonRenewing` or `PastDue` subscription as still holding its plan);
+it is false for `Paused` and `Canceled`.
+
+Transitions are **deny-by-default**: `SubscriptionManager` checks every status change
+against its allowed-transition table and throws
+`Cbox\Billing\Subscription\Exceptions\IllegalStateTransition` on an illegal one
+(resuming a canceled subscription, taking a paused one past-due, …) rather than
+applying it silently. The allowed moves:
+
+```
+create ─▶ Trialing (with a trial)   or   Active (without)
+Trialing   ─▶ Active | Paused | PastDue | NonRenewing | Canceled
+Active     ─▶ PastDue | Paused | NonRenewing | Canceled   (and Active, idempotent)
+PastDue    ─▶ Active | NonRenewing | Canceled
+Paused     ─▶ Active | Canceled
+NonRenewing─▶ Active | Canceled
+Canceled   ─▶ (terminal)
+```
+
+```php
+$sub = $manager->markPastDue($sub);  // payment failed  → PastDue
+$sub = $manager->recover($sub);      // payment recovered → Active
+$sub = $manager->pause($sub, $at);   // → Paused (records the pause instant)
+$sub = $manager->resume($sub, $at);  // Paused → Active, period shifted by the paused span
+```
+
+`renew` **honours the non-billing states**: a `Paused` or `Canceled` subscription is
+returned untouched (no period advance, no charge), and a `NonRenewing` one is enacted
+to `Canceled`.
+
+## Trials
+
+A subscription can begin in a **trial** — pass a `trialEndsAt` to `create` (or use the
+explicit `startTrial`). It opens `Trialing`, carries the trial end, and **charges
+nothing** during the trial. At trial end, `convertTrial` moves it to `Active` (the
+first charge is raised by the invoice/renewal path that observes the transition):
+
+```php
+$sub = $manager->startTrial($id, $org, $productId, $priceId, $period, $trialEndsAt); // Trialing
+$sub = $manager->convertTrial($sub, $at);   // Trialing → Active, first charge
+```
+
+A host that requires a payment method or commitment before charging can, per its own
+policy, route trial end to a non-serving state (`cancelNow`, or `pause`) instead of
+converting.
+
+## Ramp deals
+
+A **ramp** steps the recurring price over a contract's term — a *predetermined*
+schedule of price changes rather than one scheduled by hand. A `RampSchedule` is an
+ordered set of `RampStep`s (`{fromPeriodIndex, Money}`); the step covering a period is
+the one with the greatest `fromPeriodIndex ≤ index`, so the amount holds until the next
+boundary:
+
+```php
+$ramp = new RampSchedule([
+    new RampStep(0, Money::ofMinor(10000, 'USD')),  // 100.00 for periods 0–2
+    new RampStep(3, Money::ofMinor(15000, 'USD')),  // 150.00 from period 3 on
+]);
+$sub = $manager->withRamp($sub, $ramp);
+```
+
+Each `renew` advances the subscription's `periodIndex`, and
+`effectiveRecurringAmount()` resolves the ramp step for the current index — so the
+same subscription charges 100.00 through the first three periods and 150.00
+thereafter, with no per-period scheduling. It composes with `scheduleChange`
+(price-id changes) independently: the ramp drives the recurring *amount* by index,
+scheduled changes re-pin the *price id*.
+
+## Minimum commitments & true-up
+
+A `MinimumCommitment` is a minimum spend per billing period. At period close, if the
+period's actual charged amount (recurring + metered) falls **below** the minimum, a
+**true-up** line bills the shortfall so the commitment is met. The math is the pure,
+remainder-safe `TrueUpCalculator` the invoice/renewal path calls:
+
+```php
+TrueUpCalculator::shortfall(Money $minimum, Money $actual): Money  // max(minimum − actual, 0)
+
+$sub = $manager->withMinimumCommitment($sub, new MinimumCommitment(Money::ofMinor(10000, 'USD')));
+$sub->trueUp(Money::ofMinor(7000, 'USD'));   // 30.00 shortfall → bill it
+$sub->trueUp(Money::ofMinor(12000, 'USD'));  // 0 — the floor was already met
+```
+
+Everything is integer minor units, so the true-up is exact; a currency mismatch
+between the floor and the actual amount is refused by `Money`.
 
 ## Preview equals charge (ADR-0007)
 
