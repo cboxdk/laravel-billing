@@ -9,6 +9,7 @@ use Cbox\Billing\Catalog\Enums\PriceKind;
 use Cbox\Billing\Catalog\ValueObjects\Price;
 use Cbox\Billing\Catalog\ValueObjects\Product;
 use Cbox\Billing\Catalog\ValueObjects\Term;
+use Cbox\Billing\Money\Money;
 use DateTimeImmutable;
 
 /**
@@ -87,5 +88,10 @@ readonly class InMemoryCatalog implements Catalog
         }
 
         return $match;
+    }
+
+    public function priceQuantity(string $productId, int $quantity, DateTimeImmutable $at): ?Money
+    {
+        return $this->priceFor($productId, $at)?->amountFor($quantity);
     }
 }

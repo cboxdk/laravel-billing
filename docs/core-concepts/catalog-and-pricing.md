@@ -18,11 +18,57 @@ interface Catalog
 }
 ```
 
-`InMemoryCatalog` is the default. `PricingModel` covers **flat** and **per-unit**
-pricing. Prices are **versioned by effective date**: a new version supersedes the
-prior, new subscriptions use the most recent version, and existing subscriptions
-are invoiced against the version **in effect when the subscription was created** —
-price-pinning / **grandfathering** by default.
+`InMemoryCatalog` is the default. Prices are **versioned by effective date**: a new
+version supersedes the prior, new subscriptions use the most recent version, and
+existing subscriptions are invoiced against the version **in effect when the
+subscription was created** — price-pinning / **grandfathering** by default.
+
+## Pricing models
+
+`PricingModel` selects how a quantity turns into an amount. Flat and per-unit are the
+scalar models; the four **tiered** models price against an ordered list of
+`PriceTier`s carried on the `Price` (and, for packages, a `packageSize`):
+
+| Model | Rule |
+| --- | --- |
+| `Flat` | one fixed amount regardless of quantity (billable quantity is 1) |
+| `PerUnit` | `unitAmount × quantity` |
+| `Graduated` | the quantity is sliced across tiers; **each slice is priced at its own tier's rate** and the slices are summed (plus any per-tier flat entry fee reached) |
+| `Volume` | **all** units are priced at the single tier the **total** quantity lands in (a retroactive volume discount) |
+| `Package` | `ceil(quantity ÷ packageSize)` whole blocks, each charged the block's flat price (buy in packs of N) |
+| `Stairstep` | a single flat amount for the whole bracket the quantity lands in |
+
+A `PriceTier` is `{ ?int upTo, Money unitAmount, ?Money flatAmount }`: `upTo` is the
+tier's inclusive upper bound in units (`null` marks the final, unbounded tier),
+`unitAmount` the per-unit rate within the tier, and `flatAmount` a tier fee whose
+meaning is set by the model (a graduated/volume entry fee, the package block price,
+or the stairstep bracket price).
+
+```php
+// Graduated: 0–10 @ €1.00, 11–100 @ €0.80, 101+ @ €0.50
+$price = new Price('metered-v1', 'metered', PricingModel::Graduated,
+    Money::ofMinor(0, 'EUR'), new DateTimeImmutable('2025-01-01'),
+    tiers: [
+        new PriceTier(10,   Money::ofMinor(100, 'EUR')),
+        new PriceTier(100,  Money::ofMinor(80,  'EUR')),
+        new PriceTier(null, Money::ofMinor(50,  'EUR')),
+    ],
+);
+
+$catalog->priceQuantity('metered', 150, $now); // €107.00 → 10×100 + 90×80 + 50×50
+```
+
+Every tiered model is computed by `Pricing\TierCalculator` in integer **minor units**
+— only `unitAmount × wholeUnits` and `flatAmount` terms, never a division — so no
+minor unit is ever rounded away (**remainder-safe** by construction). It is
+**deny-by-default**: an empty, mis-ordered, negatively-priced, or gap-having tier
+set, a package with no positive size/block price, or a quantity that no tier covers
+raises `MalformedTierSet` rather than silently returning zero. `priceQuantity()` is
+the single catalog entry point the quote path uses, so a tiered product prices
+through the same call as a flat one; `Price::amountFor()` does the same for a `Price`
+in hand. Tiered pricing composes with metering: a meter's aggregated billable
+quantity (see [Metering → billable-metric aggregations](metering.md#billable-metric-aggregations))
+feeds straight into `amountFor()`.
 
 ## Product shapes (ADR-0015)
 

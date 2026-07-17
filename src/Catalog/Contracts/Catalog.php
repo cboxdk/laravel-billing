@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Cbox\Billing\Catalog\Contracts;
 
 use Cbox\Billing\Catalog\Enums\PriceKind;
+use Cbox\Billing\Catalog\Enums\PricingModel;
 use Cbox\Billing\Catalog\ValueObjects\Price;
 use Cbox\Billing\Catalog\ValueObjects\Product;
 use Cbox\Billing\Catalog\ValueObjects\Term;
+use Cbox\Billing\Money\Money;
 use Cbox\Billing\Subscription\Contracts\TransitionPolicy;
 use DateTimeImmutable;
 
@@ -39,4 +41,14 @@ interface Catalog
      * date exactly like any versioned price (ADR-0015).
      */
     public function termPriceFor(string $productId, Term $term, PriceKind $kind, DateTimeImmutable $at): ?Price;
+
+    /**
+     * The total charge for `$quantity` units of a product's effective (grandfathered)
+     * price at `$at`, computed under that price's {@see PricingModel}
+     * — flat, per-unit, or a tiered model (graduated / volume / package / stairstep).
+     * Null when no non-term price is effective. This is the single entry point the
+     * quote path uses to price a (possibly aggregated) quantity without knowing the
+     * pricing model, so tiered products flow through the same call as flat ones.
+     */
+    public function priceQuantity(string $productId, int $quantity, DateTimeImmutable $at): ?Money;
 }
