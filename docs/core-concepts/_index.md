@@ -26,6 +26,7 @@ concept and the invariants; the [cookbook](../cookbook/_index.md) shows the code
 | [Quotes & invoicing](quotes-and-invoicing.md) | Quote, Invoice | [0007](../../adr/0007-preview-equals-charge.md) |
 | [Payments & dunning](payments-and-dunning.md) | Payment | — |
 | [Refunds & chargebacks](refunds-and-chargebacks.md) | Refund | — |
+| [Reporting & SaaS metrics](reporting.md) | Reporting | — |
 
 ## The load-bearing split
 
