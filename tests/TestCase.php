@@ -17,6 +17,7 @@ use Cbox\Billing\Payment\Dunning\Testing\InteractsWithDunning;
 use Cbox\Billing\Payment\Testing\InteractsWithWebhooks;
 use Cbox\Billing\Reconciliation\Testing\InteractsWithReconciliation;
 use Cbox\Billing\Refund\Testing\InteractsWithRefunds;
+use Cbox\Billing\Retention\Testing\InteractsWithRetention;
 use Cbox\Billing\Subscription\Testing\InteractsWithSubscriptionLifecycle;
 use Cbox\Billing\Wallet\Testing\InteractsWithWallet;
 use Cbox\Geo\GeoServiceProvider;
@@ -37,6 +38,7 @@ abstract class TestCase extends BaseTestCase
     use InteractsWithMetering;
     use InteractsWithReconciliation;
     use InteractsWithRefunds;
+    use InteractsWithRetention;
     use InteractsWithSubscriptionLifecycle;
     use InteractsWithWallet;
     use InteractsWithWebhooks;

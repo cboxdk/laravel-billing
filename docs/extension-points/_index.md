@@ -18,4 +18,5 @@ in. Nothing in the library is final — you replace a binding, you don't fork.
 | [Storage adapters](storage-adapters.md) | `memory` vs `database` per module, and the ClickHouse seam. |
 | [Payment gateways](payment-gateways.md) | Implement `PaymentGateway` and the webhook verifier. |
 | [Domain events](events.md) | The billing lifecycle events you listen for instead of editing the engine. |
+| [Cancellation & retention](retention.md) | The survey + save-offer seam and its events; the app binds a basic default, a plugin binds the rich flow. |
 | [Testing](testing.md) | The `InteractsWith*` traits and `Fake*` doubles. |

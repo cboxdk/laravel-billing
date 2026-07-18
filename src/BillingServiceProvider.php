@@ -17,6 +17,7 @@ use Cbox\Billing\Quote\QuoteServiceProvider;
 use Cbox\Billing\Reconciliation\ReconciliationServiceProvider;
 use Cbox\Billing\Refund\RefundServiceProvider;
 use Cbox\Billing\Reporting\ReportingServiceProvider;
+use Cbox\Billing\Retention\RetentionServiceProvider;
 use Cbox\Billing\Subscription\SubscriptionServiceProvider;
 use Cbox\Billing\Wallet\WalletServiceProvider;
 use Illuminate\Support\ServiceProvider;
@@ -41,6 +42,7 @@ class BillingServiceProvider extends ServiceProvider
         PaymentServiceProvider::class,
         RefundServiceProvider::class,
         PricingServiceProvider::class,
+        RetentionServiceProvider::class,
         EntitlementServiceProvider::class,
         ReportingServiceProvider::class,
         LedgerServiceProvider::class,
