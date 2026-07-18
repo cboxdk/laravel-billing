@@ -12,6 +12,8 @@ use Cbox\Billing\Subscription\PlanChange\CreditConsequenceCalculator;
 use Cbox\Billing\Subscription\PlanChange\FamilyTransitionPolicy;
 use Cbox\Billing\Subscription\PlanChange\PlanChangePreviewer;
 use Cbox\Billing\Subscription\Proration\ProrationCalculator;
+use Cbox\Billing\Subscription\Retirement\PlanRetirementResolver;
+use Cbox\Billing\Subscription\Retirement\RetirementRenewalPolicy;
 use Cbox\Billing\Wallet\Contracts\Wallet;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
@@ -51,6 +53,14 @@ class SubscriptionServiceProvider extends ServiceProvider
             $app->make(QuoteBuilder::class),
             $app->make(TransitionPolicy::class),
             new CreditConsequenceCalculator,
+        ));
+
+        $this->app->singleton(PlanRetirementResolver::class, static fn (): PlanRetirementResolver => new PlanRetirementResolver);
+
+        $this->app->singleton(RetirementRenewalPolicy::class, static fn (Application $app): RetirementRenewalPolicy => new RetirementRenewalPolicy(
+            $app->make(SubscriptionManager::class),
+            $app->make(PlanRetirementResolver::class),
+            $app->make(TransitionPolicy::class),
         ));
 
         $this->app->singleton(ForfeitureHandler::class, static fn (Application $app): WalletForfeiture => new WalletForfeiture(

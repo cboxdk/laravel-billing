@@ -234,6 +234,7 @@ fired on the right transition.
 
 ## Related
 
+- [Plan retirement & sunset](plan-retirement.md)
 - [Cookbook: preview a plan change](../cookbook/preview-a-plan-change.md)
 - [Quotes & invoicing](quotes-and-invoicing.md)
 - [Wallets & credits](wallets.md)

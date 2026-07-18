@@ -20,6 +20,7 @@ concept and the invariants; the [cookbook](../cookbook/_index.md) shows the code
 | [Ledger](ledger.md) | Ledger, Money | [0002](../../adr/0002-ledger-idempotency-independent-of-partitioning.md) |
 | [Reconciliation](reconciliation.md) | Reconciliation | [0003](../../adr/0003-convergent-reconciliation.md) |
 | [Subscriptions & proration](subscriptions.md) | Subscription | [0007](../../adr/0007-preview-equals-charge.md), [0006](../../adr/0006-credit-lots-expiry-forfeiture.md) |
+| [Plan retirement & sunset](plan-retirement.md) | Subscription, Catalog | [0016](../../adr/0016-plan-retirement-and-sunset.md), [0010](../../adr/0010-plan-families-and-transition-policy.md) |
 | [Entitlements](entitlements.md) | Entitlement | — |
 | [Accounts](accounts.md) | Account | — |
 | [Catalog & pricing](catalog-and-pricing.md) | Catalog, Pricing, Seller | — |

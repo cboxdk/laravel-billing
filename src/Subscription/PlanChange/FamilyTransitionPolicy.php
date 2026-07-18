@@ -16,6 +16,9 @@ use Cbox\Billing\Subscription\PlanChange\ValueObjects\TransitionEdge;
  *
  *  - **A legacy target is always refused** — a legacy plan has no inbound edge, so a
  *    subscription can never switch (back) to it, even within its own family.
+ *  - **A being-retired target is always refused** — a plan carrying a sunset cutoff (or
+ *    flagged retiring) has no inbound edge either: no one may migrate *onto* a plan that
+ *    is itself being retired (ADR-0016).
  *  - **Same family → allowed.** An in-family move needs no edge; it resets credit by
  *    default, unless a same-family edge opts into `carryOver`/guidance.
  *  - **Across families → allowed only along an explicitly declared {@see TransitionEdge}.**
@@ -38,6 +41,14 @@ readonly class FamilyTransitionPolicy implements TransitionPolicy
         if ($to->isLegacy()) {
             return TransitionDecision::disallowed(
                 "Plan [{$to->id}] is legacy and cannot be switched to.",
+            );
+        }
+
+        // A being-retired plan is likewise never a target: no one migrates onto a plan
+        // that is itself being sunset (ADR-0016).
+        if ($to->isBeingRetired()) {
+            return TransitionDecision::disallowed(
+                "Plan [{$to->id}] is being retired and cannot be switched to.",
             );
         }
 

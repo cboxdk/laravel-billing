@@ -29,5 +29,6 @@ customer, not a special case.
 | [0013](0013-unified-entitlement-allowances-credits-cadences.md) | **Unified entitlement** — included allowances + credits in one burn-down; per-grant cadences (day/month/year) |
 | [0014](0014-allotment-distribution.md) | **Allotment distribution** — drip a period total across a finer cadence (daily…half-yearly), remainder-safe |
 | [0015](0015-product-shapes-and-term-based-products.md) | **Product shapes** + term-based (registrar-style) products — `ProductShape`, `Term`×`PriceKind` pricing, `TermSubscription` grace→redemption→expiry lifecycle |
+| [0016](0016-plan-retirement-and-sunset.md) | **Plan retirement / sunset** — `PlanRetirement` cutoff + optional default successor; resolve at next renewal on/after the cutoff (successor / cancel / default / deny-by-default unresolved); no paid time lost |
 
 **Format:** Status · Context · Decision · Consequences · Alternatives considered.

@@ -6,6 +6,7 @@ namespace Cbox\Billing\Subscription;
 
 use Cbox\Billing\Events\SubscriptionChanged;
 use Cbox\Billing\Events\SubscriptionRenewed;
+use Cbox\Billing\Subscription\Contracts\TransitionPolicy;
 use Cbox\Billing\Subscription\Enums\SubscriptionStatus;
 use Cbox\Billing\Subscription\Exceptions\IllegalStateTransition;
 use Cbox\Billing\Subscription\ValueObjects\AddOn;
@@ -193,6 +194,23 @@ readonly class SubscriptionManager
         return $updated;
     }
 
+    /**
+     * Schedule (or replace) a **plan** change — a move onto a different product (and its
+     * price) at a future date, mutable until it applies. This is the price-change
+     * counterpart's plan-level sibling: a subscriber elects a successor plan here, and
+     * {@see renew()} enacts it when due. It is how a subscriber chooses a successor ahead
+     * of a plan's retirement (ADR-0016).
+     */
+    public function schedulePlanChange(Subscription $subscription, string $newProductId, string $newPriceId, DateTimeImmutable $effectiveAt): Subscription
+    {
+        $change = new ScheduledChange($newPriceId, $effectiveAt, $newProductId);
+        $updated = $this->copy($subscription, pendingChange: $change);
+
+        $this->events?->dispatch(new SubscriptionChanged($updated, $change));
+
+        return $updated;
+    }
+
     public function clearScheduledChange(Subscription $subscription): Subscription
     {
         return $this->copy($subscription, clearPendingChange: true);
@@ -276,8 +294,33 @@ readonly class SubscriptionManager
         $nextIndex = $subscription->periodIndex + 1;
 
         $renewed = $change !== null && $change->effectiveAt <= $nextPeriod->start
-            ? $this->copy($subscription, priceId: $change->newPriceId, period: $nextPeriod, clearPendingChange: true, periodIndex: $nextIndex)
+            ? $this->copy($subscription, productId: $change->newProductId, priceId: $change->newPriceId, period: $nextPeriod, clearPendingChange: true, periodIndex: $nextIndex)
             : $this->copy($subscription, period: $nextPeriod, periodIndex: $nextIndex);
+
+        $this->events?->dispatch(new SubscriptionRenewed($subscription, $renewed));
+
+        return $renewed;
+    }
+
+    /**
+     * Renew a subscription **onto a different plan** — advance it into `$nextPeriod` while
+     * switching it to `$newProductId` at `$newPriceId`, as `Active`, index incremented, any
+     * pending change cleared. This is the enactment the retirement flow uses to migrate a
+     * subscriber off a retired plan onto a validated successor (ADR-0016); it does not
+     * itself gate the transition — the {@see Retirement\RetirementRenewalPolicy} validates
+     * through the {@see TransitionPolicy} first.
+     */
+    public function renewOntoPlan(Subscription $subscription, string $newProductId, string $newPriceId, BillingPeriod $nextPeriod): Subscription
+    {
+        $renewed = $this->copy(
+            $subscription,
+            productId: $newProductId,
+            priceId: $newPriceId,
+            period: $nextPeriod,
+            status: SubscriptionStatus::Active,
+            clearPendingChange: true,
+            periodIndex: $subscription->periodIndex + 1,
+        );
 
         $this->events?->dispatch(new SubscriptionRenewed($subscription, $renewed));
 
@@ -317,6 +360,7 @@ readonly class SubscriptionManager
      */
     private function copy(
         Subscription $subscription,
+        ?string $productId = null,
         ?string $priceId = null,
         ?BillingPeriod $period = null,
         ?SubscriptionStatus $status = null,
@@ -334,7 +378,7 @@ readonly class SubscriptionManager
         return new Subscription(
             $subscription->id,
             $subscription->organizationId,
-            $subscription->productId,
+            $productId ?? $subscription->productId,
             $priceId ?? $subscription->priceId,
             $period ?? $subscription->period,
             $status ?? $subscription->status,
