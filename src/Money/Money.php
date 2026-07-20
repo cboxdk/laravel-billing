@@ -89,6 +89,81 @@ readonly class Money
         return $slices;
     }
 
+    /**
+     * Split an integer `$total` across integer `$weights` proportionally, keeping every
+     * unit — the **largest-remainder (Hamilton) method**. Each part receives
+     * `floor(total × weightᵢ / Σweights)`; the leftover whole units (always fewer than
+     * the number of parts) are handed out one each to the parts with the largest
+     * fractional remainder, ties broken by **earliest index**, so the result is fully
+     * deterministic and sums to `$total` EXACTLY. This is the one shared weighted-split
+     * policy for the whole platform — a tax amount across lines, a bundle price across
+     * its components, a discount across items — so a preview and the charge that follows
+     * it never drift apart by a stray cent.
+     *
+     * A negative `$total` distributes its remainder identically (the magnitude is split,
+     * then the sign reapplied). Weights must be non-negative and not all zero.
+     *
+     * @param  list<int>  $weights  one non-negative weight per part (at least one positive)
+     * @return list<int> exactly `count($weights)` values (empty when `$weights` is empty) summing to `$total`
+     */
+    public static function allocateWeighted(int $total, array $weights): array
+    {
+        if ($weights === []) {
+            return [];
+        }
+
+        $sumWeights = 0;
+        foreach ($weights as $weight) {
+            if ($weight < 0) {
+                throw new InvalidArgumentException('Allocation weights must be non-negative.');
+            }
+            $sumWeights += $weight;
+        }
+
+        if ($sumWeights === 0) {
+            throw new InvalidArgumentException('Allocation weights must not all be zero.');
+        }
+
+        // Split the magnitude, then reapply the sign, so a negative total spreads its
+        // remainder the same way a positive one does (no unit stranded on either side).
+        $sign = $total < 0 ? -1 : 1;
+        $magnitude = abs($total);
+
+        $base = [];
+        $remainders = [];
+        $distributed = 0;
+
+        foreach ($weights as $i => $weight) {
+            $share = $magnitude * $weight;          // exact numerator over $sumWeights
+            $quotient = intdiv($share, $sumWeights);
+            $base[$i] = $quotient;
+            $remainders[$i] = $share - $quotient * $sumWeights;   // fractional part, in [0, sumWeights)
+            $distributed += $quotient;
+        }
+
+        // Leftover whole units still to hand out — provably fewer than the number of parts.
+        $leftover = $magnitude - $distributed;
+
+        // Rank parts by largest remainder, ties broken by earliest index (deterministic).
+        $order = array_keys($weights);
+        usort($order, static function (int $a, int $b) use ($remainders): int {
+            $byRemainder = $remainders[$b] <=> $remainders[$a];
+
+            return $byRemainder !== 0 ? $byRemainder : $a <=> $b;
+        });
+
+        for ($k = 0; $k < $leftover; $k++) {
+            $base[$order[$k]]++;
+        }
+
+        $slices = [];
+        foreach ($weights as $i => $weight) {
+            $slices[] = $sign * $base[$i];
+        }
+
+        return $slices;
+    }
+
     /** The amount in integer minor units (e.g. cents). */
     public function minor(): int
     {
