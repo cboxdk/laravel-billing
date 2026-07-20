@@ -73,9 +73,13 @@ readonly class DatabaseEventLog implements EventLog
 
     private function scoped(string $org, string $meter, int $fromMs, int $toMs): Builder
     {
+        // Half-open window [fromMs, toMs): the upper bound is EXCLUSIVE so an event at
+        // exactly a period boundary ms belongs to the next period only, never counted in
+        // both the period ending at `toMs` and the one starting at `toMs` (double-billing).
         return $this->db->table(self::TABLE)
             ->where('org', $org)
             ->where('meter', $meter)
-            ->whereBetween('occurred_at', [$fromMs, $toMs]);
+            ->where('occurred_at', '>=', $fromMs)
+            ->where('occurred_at', '<', $toMs);
     }
 }

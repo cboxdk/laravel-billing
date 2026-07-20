@@ -6,6 +6,7 @@ namespace Cbox\Billing\Metering\Contracts;
 
 use Cbox\Billing\Metering\Enums\Aggregation;
 use Cbox\Billing\Metering\ValueObjects\UsageEvent;
+use Cbox\Billing\Subscription\ValueObjects\BillingPeriod;
 
 /**
  * The immutable usage event log — the metering source of truth. Invoices are
@@ -28,7 +29,10 @@ interface EventLog
 
     /**
      * Total usage `value` for an organization + meter within the millisecond-epoch
-     * window [fromMs, toMs] — the aggregation an invoice is computed from.
+     * HALF-OPEN window [fromMs, toMs) — `fromMs` inclusive, `toMs` exclusive — the
+     * aggregation an invoice is computed from. The exclusive upper bound matches
+     * {@see BillingPeriod}'s `[start, end)`, so
+     * an event at a period boundary ms is counted in exactly one adjacent period.
      *
      * Retained as the ubiquitous shorthand for {@see aggregate()} with
      * {@see Aggregation::Sum}; implementers route it through the same path.
@@ -36,8 +40,9 @@ interface EventLog
     public function sum(string $org, string $meter, int $fromMs, int $toMs): int;
 
     /**
-     * Collapse an organization + meter's events in the millisecond-epoch window
-     * [fromMs, toMs] into ONE billable quantity under the given billable-metric
+     * Collapse an organization + meter's events in the millisecond-epoch HALF-OPEN
+     * window [fromMs, toMs) — `fromMs` inclusive, `toMs` exclusive — into ONE billable
+     * quantity under the given billable-metric
      * {@see Aggregation} — `Count`, `Sum`, `Max`, `UniqueCount`, `Latest`, or
      * `WeightedSum`. An empty window yields 0 (`Max`/`Latest` too). This is the meter
      * side of the billable-quantity → tiered-price pipeline.

@@ -32,8 +32,9 @@ readonly class BillableUsageResolver
     public function __construct(private EventLog $log) {}
 
     /**
-     * The billable quantity for `(org, meter)` in the inclusive millisecond-epoch
-     * window, aggregated per the policy's configured aggregation.
+     * The billable quantity for `(org, meter)` in the half-open millisecond-epoch
+     * window [fromMs, toMs) — `toMs` exclusive — aggregated per the policy's configured
+     * aggregation.
      */
     public function quantity(string $org, string $meter, int $fromMs, int $toMs, MeterPolicy $policy): int
     {

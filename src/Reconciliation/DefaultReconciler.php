@@ -36,8 +36,9 @@ use Throwable;
  * 2. **Aged-out boundary** — `agedThrough = ceiling − window`. Usage at or above it is
  *    the live meter bucket; usage below it is attributed to the `aged_out` bucket,
  *    never dropped. Both bounds are clamped monotonic against the checkpoint.
- * 3. **Delta** — `meterDelta = sum(agedThrough, ceiling) − checkpoint.meterTotal` and
- *    `agedDelta = sum(0, agedThrough−1) − checkpoint.agedTotal`. Each delta is posted
+ * 3. **Delta** — over the half-open event-log window, `meterDelta = sum[agedThrough,
+ *    ceiling] − checkpoint.meterTotal` and `agedDelta = sum[0, agedThrough) −
+ *    checkpoint.agedTotal` (the live bucket keeps the ceiling inclusive). Each delta is posted
  *    to its bucket (a `meterDelta` can be negative when usage ages out of the live
  *    window into the aged bucket — a proper double-entry re-attribution). The
  *    checkpoint then advances.
@@ -118,10 +119,14 @@ readonly class DefaultReconciler implements Reconciler
         $ceiling = max($checkpoint->reconciledThroughMs, $now - $this->ingestLagMs);
         $agedThrough = max($checkpoint->agedThroughMs, $ceiling - $this->windowMs);
 
-        // Current cumulative usage, split at the aged-out boundary.
-        $meterTotal = $this->eventLog->sum($target->org, $target->meter, $agedThrough, $ceiling);
+        // Current cumulative usage, split at the aged-out boundary. The event log window
+        // is half-open [from, to), so the aged bucket is [0, agedThrough) and the live
+        // bucket is [agedThrough, ceiling] — passing `ceiling + 1` keeps the reconciled
+        // ceiling INCLUSIVE (an event landing exactly at the ceiling ms is reconciled
+        // this cycle, not deferred), with no overlap at the split boundary.
+        $meterTotal = $this->eventLog->sum($target->org, $target->meter, $agedThrough, $ceiling + 1);
         $agedTotal = $agedThrough > 0
-            ? $this->eventLog->sum($target->org, $target->meter, 0, $agedThrough - 1)
+            ? $this->eventLog->sum($target->org, $target->meter, 0, $agedThrough)
             : 0;
 
         $meterDelta = $meterTotal - $checkpoint->meterTotal;

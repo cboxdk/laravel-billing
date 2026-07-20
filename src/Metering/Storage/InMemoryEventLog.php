@@ -52,7 +52,9 @@ class InMemoryEventLog implements EventLog
     }
 
     /**
-     * The events for `$org`/`$meter` within the inclusive window, in append order.
+     * The events for `$org`/`$meter` within the half-open window [fromMs, toMs), in
+     * append order. The upper bound is EXCLUSIVE so a boundary-ms event lands in exactly
+     * one of two adjacent periods (matches {@see DatabaseEventLog}).
      *
      * @return list<UsageEvent>
      */
@@ -64,7 +66,7 @@ class InMemoryEventLog implements EventLog
             if ($event->org === $org
                 && $event->meter === $meter
                 && $event->occurredAt >= $fromMs
-                && $event->occurredAt <= $toMs
+                && $event->occurredAt < $toMs
             ) {
                 $matched[] = $event;
             }
