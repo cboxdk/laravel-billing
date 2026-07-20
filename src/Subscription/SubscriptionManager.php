@@ -9,6 +9,7 @@ use Cbox\Billing\Events\SubscriptionRenewed;
 use Cbox\Billing\Subscription\Contracts\TransitionPolicy;
 use Cbox\Billing\Subscription\Enums\SubscriptionStatus;
 use Cbox\Billing\Subscription\Exceptions\IllegalStateTransition;
+use Cbox\Billing\Subscription\Exceptions\TrialNotEnded;
 use Cbox\Billing\Subscription\ValueObjects\AddOn;
 use Cbox\Billing\Subscription\ValueObjects\BillingCycle;
 use Cbox\Billing\Subscription\ValueObjects\BillingPeriod;
@@ -89,8 +90,29 @@ readonly class SubscriptionManager
      * Convert a trial to a paying subscription (first charge): `Trialing` → `Active`.
      * The pure engine only flips the state and clears the trial marker; the first charge
      * is raised by the invoice/renewal path that observes the transition.
+     *
+     * The conversion honours the trial boundary: `$at` must be at or after `trialEndsAt`,
+     * otherwise it throws {@see TrialNotEnded} rather than charging the customer before
+     * the trial they were promised has run. For a deliberate early conversion (a
+     * mid-trial upgrade) use {@see forceConvertTrial()}.
      */
     public function convertTrial(Subscription $subscription, DateTimeImmutable $at): Subscription
+    {
+        $trialEndsAt = $subscription->trialEndsAt;
+        if ($trialEndsAt !== null && $at < $trialEndsAt) {
+            throw TrialNotEnded::before($trialEndsAt, $at);
+        }
+
+        return $this->forceConvertTrial($subscription);
+    }
+
+    /**
+     * Convert a trial to `Active` immediately, WITHOUT the `trialEndsAt` boundary check —
+     * the explicit path for an intentional early conversion (e.g. the customer upgrades
+     * mid-trial and elects to start paying now). Same state transition and trial-marker
+     * clearing as {@see convertTrial()}, only without the boundary guard.
+     */
+    public function forceConvertTrial(Subscription $subscription): Subscription
     {
         $this->assertTransition($subscription->status, SubscriptionStatus::Active);
 
