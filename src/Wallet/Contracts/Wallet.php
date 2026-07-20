@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cbox\Billing\Wallet\Contracts;
 
+use Cbox\Billing\Ledger\Contracts\Ledger;
 use Cbox\Billing\Wallet\CreditConsumer;
 use Cbox\Billing\Wallet\ValueObjects\ConsumptionPlan;
 use Cbox\Billing\Wallet\ValueObjects\CreditGrant;
@@ -18,8 +19,12 @@ use Cbox\Billing\Wallet\ValueObjects\RemovalReport;
  *
  * `consume()` runs the pool-order-aware burn-down ({@see CreditConsumer}) and applies
  * it, decrementing the drawn grants (pushing the PAYG sink negative when needed), and
- * returns the plan (which may report a shortfall for the overage policy to handle). A
- * durable implementation additionally posts each monetary drawdown to the ledger.
+ * returns the plan (which may report a shortfall for the overage policy to handle). The
+ * returned {@see ConsumptionPlan} carries each draw, so a caller that owns a money
+ * account chart can post the monetary drawdowns to a {@see Ledger}
+ * itself; the wallet deliberately does NOT post to the ledger — it has no account chart
+ * and holds unit denominations as well as money, so ledger posting is left to the layer
+ * that has both.
  */
 interface Wallet
 {
