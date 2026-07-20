@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Cbox\Billing\Money\Money;
 use Cbox\Billing\Quote\Contracts\QuoteBuilder;
+use Cbox\Billing\Quote\Exceptions\InvalidQuoteLine;
 use Cbox\Billing\Quote\ValueObjects\LineInput;
 use Cbox\Billing\Quote\ValueObjects\QuoteContext;
 use Cbox\Geo\Contracts\JurisdictionRepository;
@@ -68,6 +69,33 @@ it('returns a tax-pending quote when the jurisdiction is not resolved (US withou
         ->and($quote->totals->tax->minor())->toBe(0)
         ->and($quote->totals->dueNow->minor())->toBe(10000)
         ->and($quote->lines[0]->treatment)->toBeNull();
+});
+
+it('refuses a negative line quantity at construction, before any total is computed', function () {
+    expect(fn () => new LineInput('Pro plan', -1, Money::ofMinor(5000, 'EUR')))
+        ->toThrow(InvalidQuoteLine::class);
+});
+
+it('refuses a zero line quantity at construction', function () {
+    expect(fn () => new LineInput('Pro plan', 0, Money::ofMinor(5000, 'EUR')))
+        ->toThrow(InvalidQuoteLine::class);
+});
+
+it('fails fast on a mixed-currency quote before tax or totals are computed', function () {
+    $builder = $this->builder;
+    $context = new QuoteContext(
+        place: $this->geo->find(new CountryCode('DK')),
+        customer: CustomerType::Consumer,
+        seller: new SellerRegistrations(new CountryCode('DK')),
+    );
+
+    expect(fn () => $builder->build(
+        [
+            new LineInput('Pro plan', 1, Money::ofMinor(5000, 'EUR')),
+            new LineInput('Add-on', 1, Money::ofMinor(2000, 'USD')),
+        ],
+        $context,
+    ))->toThrow(InvalidQuoteLine::class);
 });
 
 it('reverse-charges an intra-EU B2B quote so nothing tax is due', function () {

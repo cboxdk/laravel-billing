@@ -6,6 +6,7 @@ namespace Cbox\Billing\Quote;
 
 use Cbox\Billing\Money\Money;
 use Cbox\Billing\Quote\Contracts\QuoteBuilder;
+use Cbox\Billing\Quote\Exceptions\InvalidQuoteLine;
 use Cbox\Billing\Quote\ValueObjects\LineInput;
 use Cbox\Billing\Quote\ValueObjects\Quote;
 use Cbox\Billing\Quote\ValueObjects\QuoteContext;
@@ -35,6 +36,16 @@ readonly class DefaultQuoteBuilder implements QuoteBuilder
         }
 
         $currency = $lines[0]->unitAmount->currency();
+
+        // Fail fast on a mixed-currency quote BEFORE any tax/total is computed: summing
+        // mismatched currencies would otherwise surface as a late brick/money mismatch
+        // deep in totalling, long after the numbers looked plausible.
+        foreach ($lines as $line) {
+            $lineCurrency = $line->unitAmount->currency();
+            if ($lineCurrency !== $currency) {
+                throw InvalidQuoteLine::mixedCurrency($currency, $lineCurrency);
+            }
+        }
 
         try {
             return $this->resolved($lines, $context, $currency);
