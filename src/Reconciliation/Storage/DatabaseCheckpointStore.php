@@ -41,6 +41,16 @@ readonly class DatabaseCheckpointStore implements CheckpointStore
 
     public function transactionally(string $org, string $meter, callable $mutator): Checkpoint
     {
+        // Claim the entity's row up front with an atomic INSERT-or-no-op on the
+        // UNIQUE(org, meter) index BEFORE taking the row lock: on a first-ever reconcile
+        // two concurrent workers would otherwise both find no row, both plan from genesis
+        // over an unlocked gap, and both post a delta (a double-count until ledger
+        // idempotency catches it). Seeding the genesis row here means the SELECT … FOR
+        // UPDATE below always locks a real row, so concurrent first-reconciles serialize
+        // on the unique index instead of racing (mirrors DatabaseLedger / DatabaseWallet,
+        // ADR-0002). A re-run writes nothing (idempotent).
+        $this->db->table(self::TABLE)->insertOrIgnore($this->genesisRow($org, $meter));
+
         return $this->db->transaction(function () use ($org, $meter, $mutator): Checkpoint {
             $row = $this->db->table(self::TABLE)
                 ->where('org', $org)
@@ -65,6 +75,25 @@ readonly class DatabaseCheckpointStore implements CheckpointStore
 
             return $next;
         });
+    }
+
+    /**
+     * The all-zero genesis row for an entity, used to atomically seed the checkpoint
+     * before locking it. Mirrors {@see Checkpoint::genesis()}.
+     *
+     * @return array<string, int|string>
+     */
+    private function genesisRow(string $org, string $meter): array
+    {
+        return [
+            'org' => $org,
+            'meter' => $meter,
+            'aged_through_ms' => 0,
+            'reconciled_through_ms' => 0,
+            'meter_total' => 0,
+            'aged_total' => 0,
+            'sequence' => 0,
+        ];
     }
 
     private function hydrate(string $org, string $meter, stdClass $row): Checkpoint

@@ -48,6 +48,23 @@ it('reconciles durable usage into the durable ledger and persists the checkpoint
         ->and($this->db->table('billing_usage_checkpoints')->count())->toBe(1);
 });
 
+it('seeds the checkpoint row up front so a concurrent first-reconcile locks a real row', function (): void {
+    // Before any reconcile there is no row. A single transactionally() call must SEED
+    // the genesis row (insertOrIgnore on the UNIQUE(org, meter) index) BEFORE it takes
+    // the FOR UPDATE lock — that is what makes two concurrent first-reconciles serialize
+    // on the index instead of both planning from an unlocked gap and double-posting.
+    expect($this->db->table('billing_usage_checkpoints')->where('org', 'org9')->count())->toBe(0);
+
+    $this->checkpoints->transactionally('org9', 'meterX', static fn ($current) => $current);
+
+    $row = $this->db->table('billing_usage_checkpoints')->where('org', 'org9')->where('meter', 'meterX')->first();
+    expect($row)->not->toBeNull();
+
+    // Idempotent: a second call writes no duplicate row (insertOrIgnore no-ops on re-run).
+    $this->checkpoints->transactionally('org9', 'meterX', static fn ($current) => $current);
+    expect($this->db->table('billing_usage_checkpoints')->where('org', 'org9')->where('meter', 'meterX')->count())->toBe(1);
+});
+
 it('is a no-op re-run when nothing new landed', function (): void {
     $target = new ReconcileTarget('org1', 'api.calls');
     $this->eventLog->append([new UsageEvent('e1', 'org1', 'api.calls', 'svc', 5, 1_000)]);
