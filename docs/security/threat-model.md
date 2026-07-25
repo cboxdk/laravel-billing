@@ -82,9 +82,14 @@ and the library makes no claim about them:
 ## Reporting
 
 Security-relevant correctness issues in the library (a way to double-post, a
-double-spend, an over-refund, a broken idempotency key) belong on the package's
-issue tracker. Do not report your own application's auth or infrastructure gaps
-here — those are outside the library's boundary as described above.
+double-spend, an over-refund, a broken idempotency key) should be reported
+**privately**, through GitHub's Private Vulnerability Reporting on this repository —
+Security tab → *Report a vulnerability*. Please do not open a public issue for one:
+in a package that moves money, a public double-spend report is an exploit
+announcement. See [`SECURITY.md`](../../SECURITY.md) for the full policy.
+
+Do not report your own application's auth or infrastructure gaps here — those are
+outside the library's boundary as described above.
 
 ## Related
 

@@ -26,7 +26,10 @@ framework:
   rollout journal, and currency-lock adapters.
 - **`illuminate/cache` `^13.0`** — the app-local enforcement store.
 
-In practice this is Laravel 13.
+In practice this is Laravel 13 — and **only** Laravel 13. This package does not
+support Laravel 12, and no released version ever has. That is a deliberate choice
+rather than a gap; see [ADR-0017](../adr/0017-single-laravel-major-support-window.md)
+for the reasoning and when it will be revisited.
 
 ## Direct dependencies
 
@@ -35,6 +38,8 @@ In practice this is Laravel 13.
 - **`cboxdk/laravel-tax` `^0.1`** — the EU VAT engine (place of supply, reverse
   charge, VIES) behind the `TaxCalculator` contract. Drives quote tax lines.
 - **`cboxdk/laravel-geo` `^0.4`** — geography primitives used by tax routing.
+- **`cboxdk/license` `^0.1`** — Ed25519 license issue/verify, and the capability
+  gate the commercial plugins read. First-party, MIT-licensed.
 
 ## What is *not* required
 

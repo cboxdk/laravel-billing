@@ -14,7 +14,7 @@ domain-free: every capability sits behind a contract you bind, mock or replace.
 > UI/hosting layer yourself; reach for this package to embed billing in your own
 > Laravel app.
 
-> **Status: v0.2.0 (pre-1.0).** The architecture is settled and the full module
+> **Status: v0.8.1 (pre-1.0).** The architecture is settled and the full module
 > surface — metering, wallets, ledger, reconciliation, subscriptions,
 > entitlements, accounts, catalog, quotes/invoicing, payments, refunds — has
 > shipped behind contracts. Start with the [documentation](docs/index.md); the
