@@ -30,5 +30,6 @@ customer, not a special case.
 | [0014](0014-allotment-distribution.md) | **Allotment distribution** — drip a period total across a finer cadence (daily…half-yearly), remainder-safe |
 | [0015](0015-product-shapes-and-term-based-products.md) | **Product shapes** + term-based (registrar-style) products — `ProductShape`, `Term`×`PriceKind` pricing, `TermSubscription` grace→redemption→expiry lifecycle |
 | [0016](0016-plan-retirement-and-sunset.md) | **Plan retirement / sunset** — `PlanRetirement` cutoff + optional default successor; resolve at next renewal on/after the cutoff (successor / cancel / default / deny-by-default unresolved); no paid time lost |
+| [0017](0017-single-laravel-major-support-window.md) | **Single Laravel major** — the platform targets Laravel 13 only; a recorded deviation from the current-and-previous-major library rule, revisited at the next major boundary |
 
 **Format:** Status · Context · Decision · Consequences · Alternatives considered.
