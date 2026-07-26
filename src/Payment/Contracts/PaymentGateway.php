@@ -30,6 +30,21 @@ interface PaymentGateway
 {
     public function name(): string;
 
+    /**
+     * Collect the intent's amount server-side.
+     *
+     * This is the OFF-SESSION path — renewals, dunning retries, proration catch-ups — where
+     * nobody is at the keyboard. An implementation MUST pull the vaulted instrument named by
+     * {@see PaymentIntent::$customerRef} and {@see PaymentIntent::$paymentMethodRef} and
+     * confirm immediately; creating an intent without them yields a gateway status meaning
+     * "waiting for a payment method", which is indistinguishable from a pending authorisation
+     * and therefore never opens dunning — the subscription renews and collects nothing.
+     *
+     * When the intent is not off-session ({@see PaymentIntent::isOffSession()} is false), an
+     * implementation MUST return a FAILED result rather than attempt the charge. Failing is
+     * recoverable — it opens dunning, which emails the customer to update their card. Silently
+     * returning "needs action" is not.
+     */
     public function charge(PaymentIntent $intent): PaymentResult;
 
     /**
