@@ -14,9 +14,14 @@ use Cbox\Billing\Payment\ValueObjects\PaymentIntentRequest;
 use Cbox\Billing\Payment\ValueObjects\PaymentResult;
 use Cbox\Billing\Payment\ValueObjects\SetupIntentRequest;
 
+/**
+ * An OFF-SESSION intent — it names the gateway customer and the vaulted instrument, which is
+ * what charging with the cardholder absent requires. An intent without them is refused; see
+ * the dedicated test below.
+ */
 function intent(): PaymentIntent
 {
-    return new PaymentIntent('pi_1', Money::ofMinor(12500, 'EUR'), 'DK-000001');
+    return new PaymentIntent('pi_1', Money::ofMinor(12500, 'EUR'), 'DK-000001', 'cus_1', 'pm_1');
 }
 
 function paymentIntentRequest(): PaymentIntentRequest
@@ -184,4 +189,16 @@ it('schedules dunning retries and exhausts them', function () {
         ->and($policy->retryDelayForAttempt(3))->toBe(5)
         ->and($policy->retryDelayForAttempt(4))->toBeNull() // exhausted
         ->and($policy->maxRetries())->toBe(3);
+});
+
+it('refuses an off-session charge that names no vaulted instrument', function () {
+    $gateway = new FakePaymentGateway(PaymentResult::succeeded('gw_ref'));
+
+    $result = $gateway->charge(new PaymentIntent('pi_2', Money::ofMinor(12500, 'EUR'), 'DK-000002'));
+
+    // The fake must be no easier to satisfy than the real gateways: an intent with no customer
+    // and no method cannot be collected, so reporting success here would let a renewal bug ship
+    // green. It still RECORDS the attempt, so a test can assert what was asked for.
+    expect($result->status)->toBe(PaymentStatus::Failed)
+        ->and($gateway->charged)->toHaveCount(1);
 });

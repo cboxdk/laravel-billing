@@ -66,6 +66,17 @@ class FakePaymentGateway implements PaymentGateway
     {
         $this->charged[] = $intent;
 
+        // Mirror what a real gateway does with an off-session charge that names no instrument:
+        // refuse it. A fake that returns the configured success regardless of what it is handed
+        // will happily "settle" a renewal the live gateway could never collect — which is
+        // exactly how "renewals collect nothing" stayed green across the whole suite. A fake
+        // that is easier to satisfy than production is worse than no fake.
+        if (! $intent->isOffSession()) {
+            return PaymentResult::failed(
+                'No saved payment method for this account: an off-session charge needs a gateway customer and a vaulted payment method.',
+            );
+        }
+
         return $this->result;
     }
 
