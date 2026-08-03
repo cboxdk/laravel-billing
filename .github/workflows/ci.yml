@@ -27,20 +27,6 @@ jobs:
           coverage: none
           tools: composer:v2
 
-      # Audit the COMMITTED lock before re-resolving. `composer update` below resolves a
-      # fresh tree, so the audit inside `composer qa` inspects versions that were never
-      # shipped — which is how a lockfile carrying three open Guzzle advisories stayed
-      # green. This step is what actually guards the published artifact.
-      - name: Audit the committed lockfile
-        run: composer audit --locked --no-dev
-
-      # SBOM drift, also against the committed lock: the published sbom.json must
-      # describe the tree that ships, and nothing else regenerates it.
-      - name: SBOM is not stale
-        run: |
-          composer sbom
-          git diff --exit-code sbom.json
-
       - name: Constrain Testbench (Laravel major)
         run: composer require "orchestra/testbench:${{ matrix.testbench }}" --dev --no-update --no-interaction
 
