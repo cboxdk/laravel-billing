@@ -10,6 +10,8 @@ use Cbox\Billing\Quote\ValueObjects\QuoteContext;
 use Cbox\Geo\Contracts\JurisdictionRepository;
 use Cbox\Geo\ValueObjects\CountryCode;
 use Cbox\Tax\Enums\CustomerType;
+use Cbox\Tax\Enums\TaxCategory;
+use Cbox\Tax\Enums\TaxClass;
 use Cbox\Tax\Enums\TaxTreatment;
 use Cbox\Tax\ValueObjects\SellerRegistrations;
 
@@ -111,4 +113,25 @@ it('reverse-charges an intra-EU B2B quote so nothing tax is due', function () {
 
     expect($quote->totals->tax->minor())->toBe(0)
         ->and($quote->lines[0]->treatment)->toBe(TaxTreatment::ReverseCharge);
+});
+
+it('taxes a cross-border consumer subscription where the consumer is, as a digital service', function () {
+    $quote = $this->builder->build(
+        [new LineInput('Pro plan', 1, Money::ofMinor(10000, 'EUR'))],
+        new QuoteContext(
+            place: $this->geo->find(new CountryCode('FR')),
+            customer: CustomerType::Consumer,
+            seller: new SellerRegistrations(new CountryCode('DK')),
+        ),
+    );
+
+    // A subscription is an electronically supplied service: French VAT, not Danish.
+    expect($quote->lines[0]->taxRatePercentage)->toBe('20')
+        ->and($quote->totals->tax->minor())->toBe(2000);
+});
+
+it('reads the legacy Standard category as a digital service and passes a tax class through', function () {
+    expect((new LineInput('Pro plan', 1, Money::ofMinor(100, 'EUR')))->taxClass())->toBe(TaxClass::DigitalService)
+        ->and((new LineInput('Book', 1, Money::ofMinor(100, 'EUR'), TaxCategory::Books))->taxClass())->toBe(TaxCategory::Books->toClass())
+        ->and((new LineInput('Hosting', 1, Money::ofMinor(100, 'EUR'), TaxClass::WebHosting))->taxClass())->toBe(TaxClass::WebHosting);
 });

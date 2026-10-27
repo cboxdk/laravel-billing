@@ -21,7 +21,9 @@ use Cbox\Billing\Retention\Testing\InteractsWithRetention;
 use Cbox\Billing\Subscription\Testing\InteractsWithSubscriptionLifecycle;
 use Cbox\Billing\Wallet\Testing\InteractsWithWallet;
 use Cbox\Geo\GeoServiceProvider;
+use Cbox\Tax\Contracts\TaxCalculator;
 use Cbox\Tax\TaxServiceProvider;
+use Cbox\Tax\Testing\InteractsWithTax;
 use Illuminate\Support\ServiceProvider;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 
@@ -40,8 +42,21 @@ abstract class TestCase extends BaseTestCase
     use InteractsWithRefunds;
     use InteractsWithRetention;
     use InteractsWithSubscriptionLifecycle;
+    use InteractsWithTax;
     use InteractsWithWallet;
     use InteractsWithWebhooks;
+
+    /**
+     * laravel-tax prices from a synced register and refuses without one. The suite asserts
+     * billing arithmetic, not live rates, so every test prices from the tax package's own
+     * fixture register instead of a download.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->app->instance(TaxCalculator::class, $this->taxCalculator());
+    }
 
     /**
      * @return list<class-string<ServiceProvider>>

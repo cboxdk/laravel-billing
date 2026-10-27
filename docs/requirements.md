@@ -35,9 +35,9 @@ for the reasoning and when it will be revisited.
 
 - **`brick/money` `^0.14`** — money is integer minor units in immutable value
   objects, never floats. The `Cbox\Billing\Money\Money` VO wraps it.
-- **`cboxdk/laravel-tax` `^0.1`** — the EU VAT engine (place of supply, reverse
+- **`cboxdk/laravel-tax` `^0.17`** — the EU VAT engine (place of supply, reverse
   charge, VIES) behind the `TaxCalculator` contract. Drives quote tax lines.
-- **`cboxdk/laravel-geo` `^0.4`** — geography primitives used by tax routing.
+- **`cboxdk/laravel-geo` `^0.6`** — geography primitives used by tax routing.
 - **`cboxdk/license` `^0.1`** — Ed25519 license issue/verify, and the capability
   gate the commercial plugins read. First-party, MIT-licensed.
 

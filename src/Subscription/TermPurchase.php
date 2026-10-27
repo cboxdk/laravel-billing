@@ -14,6 +14,7 @@ use Cbox\Billing\Quote\ValueObjects\Quote;
 use Cbox\Billing\Quote\ValueObjects\QuoteContext;
 use Cbox\Billing\Subscription\Exceptions\TermPriceNotAvailable;
 use Cbox\Tax\Enums\TaxCategory;
+use Cbox\Tax\Enums\TaxClass;
 use DateTimeImmutable;
 
 /**
@@ -47,7 +48,7 @@ readonly class TermPurchase
         int $quantity,
         QuoteContext $context,
         DateTimeImmutable $at,
-        TaxCategory $category = TaxCategory::Standard,
+        TaxCategory|TaxClass $category = TaxCategory::Standard,
         ?string $description = null,
     ): Quote {
         return $this->quotes->build(
@@ -68,7 +69,7 @@ readonly class TermPurchase
         PriceKind $kind,
         int $quantity,
         DateTimeImmutable $at,
-        TaxCategory $category = TaxCategory::Standard,
+        TaxCategory|TaxClass $category = TaxCategory::Standard,
         ?string $description = null,
     ): LineInput {
         $price = $this->catalog->termPriceFor($product->id, $term, $kind, $at);

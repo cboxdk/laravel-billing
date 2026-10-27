@@ -7,8 +7,8 @@
     "require": {
         "php": "^8.4",
         "brick/money": "^0.14",
-        "cboxdk/laravel-geo": "^0.4",
-        "cboxdk/laravel-tax": "^0.1",
+        "cboxdk/laravel-geo": "^0.6",
+        "cboxdk/laravel-tax": "^0.17",
         "cboxdk/license": "^0.1",
         "illuminate/cache": "^13.0",
         "illuminate/contracts": "^13.0",

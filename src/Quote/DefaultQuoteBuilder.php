@@ -73,7 +73,7 @@ readonly class DefaultQuoteBuilder implements QuoteBuilder
                 place: $context->place,
                 customer: $context->customer,
                 seller: $context->seller,
-                category: $line->category,
+                category: $line->taxClass(),
                 customerTaxIdValidated: $context->customerTaxIdValidated,
             ));
 
