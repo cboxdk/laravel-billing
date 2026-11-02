@@ -31,7 +31,7 @@ final class InvalidQuantity extends InvalidArgumentException
 
     public static function tooLarge(string $given): self
     {
-        return new self("A quantity must not exceed 999999.999; got [{$given}].");
+        return new self("A quantity must not exceed 9999999999999.999; got [{$given}].");
     }
 
     public static function notWhole(string $given): self

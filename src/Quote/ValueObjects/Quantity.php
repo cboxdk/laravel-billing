@@ -15,8 +15,8 @@ readonly class Quantity
 {
     public const int SCALE = 3;
 
-    /** 999999.999 expressed in thousandths. */
-    public const int MAX_SCALED = 999_999_999;
+    /** 9,999,999,999,999.999 (the most a decimal(16,3) column holds) in thousandths. */
+    public const int MAX_SCALED = 9_999_999_999_999_999;
 
     private const int FACTOR = 1000;
 
@@ -51,7 +51,7 @@ readonly class Quantity
         }
 
         $whole = ltrim($m[1], '0');
-        if (strlen($whole) > 6) {
+        if (strlen($whole) > 13) {
             throw InvalidQuantity::tooLarge($given);
         }
 
