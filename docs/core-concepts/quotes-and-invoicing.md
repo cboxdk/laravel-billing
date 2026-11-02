@@ -25,6 +25,19 @@ amounts are rounded per line, consistent with the settlement gateway, so a quote
 shown at confirm matches the charge (the [preview-equals-charge](subscriptions.md)
 discipline).
 
+## Quantities and units
+
+A line's `$quantity` is a `Quantity`: a positive decimal with up to three places, such as `12.5` tonnes or `0.950` hours. `LineInput` still accepts a plain `int` for this release and turns it into a `Quantity`; pass a `Quantity` going forward. An optional `unit` (at most 12 characters, for example `t` or `h`) travels with the line onto the quote, the invoice and any credit note.
+
+A line is rounded once, half up, to the currency's minor unit, so a quote shown at confirm equals the charge.
+
+| Case | Result |
+| --- | --- |
+| `0.950 × 120000 DKK` | `114000` |
+| `1.125 × 100000 DKK` | `112500` |
+| `0.333 × 10000 DKK` | `3330` |
+| `2.5 × 333 DKK` | `833` (832.5 rounds half up) |
+
 ## Invoicing
 
 `Invoicer` fixes a **confirmed** quote to a legal invoice:

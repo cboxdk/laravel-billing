@@ -6,6 +6,7 @@ use Cbox\Billing\Money\Money;
 use Cbox\Billing\Quote\Contracts\QuoteBuilder;
 use Cbox\Billing\Quote\Exceptions\InvalidQuoteLine;
 use Cbox\Billing\Quote\ValueObjects\LineInput;
+use Cbox\Billing\Quote\ValueObjects\Quantity;
 use Cbox\Billing\Quote\ValueObjects\QuoteContext;
 use Cbox\Geo\Contracts\JurisdictionRepository;
 use Cbox\Geo\ValueObjects\CountryCode;
@@ -134,4 +135,32 @@ it('reads the legacy Standard category as a digital service and passes a tax cla
     expect((new LineInput('Pro plan', 1, Money::ofMinor(100, 'EUR')))->taxClass())->toBe(TaxClass::DigitalService)
         ->and((new LineInput('Book', 1, Money::ofMinor(100, 'EUR'), TaxCategory::Books))->taxClass())->toBe(TaxCategory::Books->toClass())
         ->and((new LineInput('Hosting', 1, Money::ofMinor(100, 'EUR'), TaxClass::WebHosting))->taxClass())->toBe(TaxClass::WebHosting);
+});
+
+it('prices a fractional quantity once per line and carries the unit', function (): void {
+    $quote = $this->builder->build(
+        [new LineInput('Consulting, October', Quantity::of('12.5'), Money::ofMinor(120000, 'DKK'), unit: 't')],
+        new QuoteContext(place: $this->geo->find(new CountryCode('DK')), customer: CustomerType::Business, seller: new SellerRegistrations(new CountryCode('DK'))),
+    );
+
+    expect($quote->lines[0]->quantity->toDecimalString())->toBe('12.500')
+        ->and($quote->lines[0]->unit)->toBe('t')
+        ->and($quote->totals->net->minor())->toBe(1500000);
+});
+
+it('still accepts an integer quantity', function (): void {
+    expect((new LineInput('Pro plan', 2, Money::ofMinor(5000, 'EUR')))->quantity->toInt())->toBe(2);
+});
+
+it('refuses zero and negative integer quantities as before', function (int $qty): void {
+    expect(fn () => new LineInput('x', $qty, Money::ofMinor(100, 'EUR')))->toThrow(InvalidQuoteLine::class);
+})->with([0, -1]);
+
+it('trims the unit and stores null for a blank one', function (): void {
+    expect((new LineInput('x', 1, Money::ofMinor(100, 'EUR'), unit: '  '))->unit)->toBeNull()
+        ->and((new LineInput('x', 1, Money::ofMinor(100, 'EUR'), unit: ' h '))->unit)->toBe('h');
+});
+
+it('refuses a unit longer than 12 characters', function (): void {
+    expect(fn () => new LineInput('x', 1, Money::ofMinor(100, 'EUR'), unit: str_repeat('a', 13)))->toThrow(InvalidQuoteLine::class);
 });

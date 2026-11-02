@@ -20,9 +20,14 @@ use InvalidArgumentException;
  */
 class InvalidQuoteLine extends InvalidArgumentException
 {
-    public static function nonPositiveQuantity(int $quantity): self
+    public static function nonPositiveQuantity(string $quantity): self
     {
-        return new self("A quote line quantity must be a positive integer; got [{$quantity}].");
+        return new self("A quote line quantity must be positive; got [{$quantity}].");
+    }
+
+    public static function unitTooLong(string $unit): self
+    {
+        return new self("A quote line unit is at most 12 characters; got [{$unit}].");
     }
 
     public static function mixedCurrency(string $expected, string $found): self

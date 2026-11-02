@@ -19,10 +19,11 @@ seller's tax registrations:
 use Cbox\Billing\Money\Money;
 use Cbox\Billing\Quote\Contracts\QuoteBuilder;
 use Cbox\Billing\Quote\ValueObjects\LineInput;
+use Cbox\Billing\Quote\ValueObjects\Quantity;
 
 $quote = $quotes->build(
     lines: [
-        new LineInput(description: 'Pro plan — July', quantity: 1, unitAmount: Money::ofMinor(3_000, 'EUR')),
+        new LineInput(description: 'Pro plan — July', quantity: Quantity::of('12.5'), unitAmount: Money::ofMinor(3_000, 'EUR'), unit: 't'),
     ],
     context: $quoteContext,
 );

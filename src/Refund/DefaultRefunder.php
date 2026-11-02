@@ -11,6 +11,7 @@ use Cbox\Billing\Ledger\Contracts\Ledger;
 use Cbox\Billing\Money\Money;
 use Cbox\Billing\Payment\Contracts\PaymentGateway;
 use Cbox\Billing\Payment\ValueObjects\RefundIntent;
+use Cbox\Billing\Quote\ValueObjects\Quantity;
 use Cbox\Billing\Quote\ValueObjects\QuoteLine;
 use Cbox\Billing\Refund\Contracts\Refunder;
 use Cbox\Billing\Refund\Contracts\RefundRepository;
@@ -174,7 +175,7 @@ readonly class DefaultRefunder implements Refunder
 
         $line = new QuoteLine(
             description: sprintf('Partial refund of invoice %s', $invoice->number),
-            quantity: 1,
+            quantity: Quantity::one(),
             net: $net->negated(),
             tax: $tax->negated(),
             gross: $gross->negated(),
@@ -204,6 +205,7 @@ readonly class DefaultRefunder implements Refunder
             treatment: $line->treatment,
             taxRatePercentage: $line->taxRatePercentage,
             taxNote: $line->taxNote,
+            unit: $line->unit,
         ), $lines);
     }
 

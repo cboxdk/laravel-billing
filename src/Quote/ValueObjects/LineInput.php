@@ -13,9 +13,14 @@ use Cbox\Tax\Enums\TaxClass;
  * A requested quote line: what is being bought, how many, and the unit amount (net
  * or gross per the quote's pricing mode). The catalog resolves prices into these.
  *
- * The quantity is validated positive at construction: a zero or negative quantity
- * would multiply a flat/per-unit price into a zero or negative charge, so it is
- * refused here (deny-by-default) rather than producing a wrong invoice downstream.
+ * The quantity is a {@see Quantity} (up to three decimals), always positive: a zero or
+ * negative quantity would multiply a flat/per-unit price into a zero or negative charge,
+ * so it is refused (deny-by-default) rather than producing a wrong invoice downstream.
+ * An `int` is accepted this release and becomes `Quantity::of($int)`; it is removed in
+ * the next minor, so pass a {@see Quantity}.
+ *
+ * The optional `unit` ("t", "h", "GB") is trimmed, null when blank, and at most 12
+ * characters.
  *
  * The line's tax class is either a {@see TaxClass} (laravel-tax's taxonomy, the precise
  * choice) or the legacy {@see TaxCategory}. See {@see TaxClass()} for how the legacy
@@ -23,15 +28,35 @@ use Cbox\Tax\Enums\TaxClass;
  */
 readonly class LineInput
 {
+    public Quantity $quantity;
+
+    public ?string $unit;
+
     public function __construct(
         public string $description,
-        public int $quantity,
+        int|Quantity $quantity,
         public Money $unitAmount,
         public TaxCategory|TaxClass $category = TaxCategory::Standard,
+        ?string $unit = null,
     ) {
-        if ($quantity <= 0) {
-            throw InvalidQuoteLine::nonPositiveQuantity($quantity);
+        if ($quantity instanceof Quantity) {
+            $this->quantity = $quantity;
+        } else {
+            if ($quantity <= 0) {
+                throw InvalidQuoteLine::nonPositiveQuantity((string) $quantity);
+            }
+
+            $this->quantity = Quantity::of($quantity);
         }
+
+        $unit = $unit === null ? null : trim($unit);
+        $unit = $unit === '' ? null : $unit;
+
+        if ($unit !== null && mb_strlen($unit) > 12) {
+            throw InvalidQuoteLine::unitTooLong($unit);
+        }
+
+        $this->unit = $unit;
     }
 
     /**

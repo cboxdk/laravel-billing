@@ -15,12 +15,13 @@ readonly class QuoteLine
 {
     public function __construct(
         public string $description,
-        public int $quantity,
+        public Quantity $quantity,
         public Money $net,
         public Money $tax,
         public Money $gross,
         public ?TaxTreatment $treatment,
         public ?string $taxRatePercentage,
         public string $taxNote,
+        public ?string $unit = null,
     ) {}
 }
