@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Cbox\Billing\Money;
 
+use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Brick\Money\Money as BrickMoney;
+use Cbox\Billing\Quote\ValueObjects\Quantity;
 use InvalidArgumentException;
 
 /**
@@ -45,6 +47,15 @@ readonly class Money
     public function multipliedBy(int $factor): self
     {
         return new self($this->money->multipliedBy($factor));
+    }
+
+    /** Multiply by a fractional quantity, rounded half-up once to the currency's default scale (ISK stays whole units). */
+    public function times(Quantity $quantity): self
+    {
+        return new self($this->money->multipliedBy(
+            BigDecimal::ofUnscaledValue($quantity->scaled(), Quantity::SCALE),
+            RoundingMode::HalfUp,
+        ));
     }
 
     /** Proportional share `numerator/denominator` (e.g. days remaining / days in period), rounded half-up. */
