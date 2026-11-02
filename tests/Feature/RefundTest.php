@@ -8,6 +8,7 @@ use Cbox\Billing\Money\Money;
 use Cbox\Billing\Payment\Enums\PaymentStatus;
 use Cbox\Billing\Quote\Contracts\QuoteBuilder;
 use Cbox\Billing\Quote\ValueObjects\LineInput;
+use Cbox\Billing\Quote\ValueObjects\Quantity;
 use Cbox\Billing\Quote\ValueObjects\QuoteContext;
 use Cbox\Billing\Quote\ValueObjects\QuoteTotals;
 use Cbox\Billing\Refund\Enums\RefundReason;
@@ -129,4 +130,18 @@ it('records the gateway settlement on the refund', function () {
     $refund = $this->refunder()->refund(fullRefund('rf_1', $this->invoice));
 
     expect($refund->gatewayResult->status)->toBe(PaymentStatus::Succeeded);
+});
+
+it('mirrors quantity and unit onto a full reversal credit note', function () {
+    $quote = $this->app->make(QuoteBuilder::class)->build(
+        [new LineInput('Consulting', Quantity::of('12.5'), Money::ofMinor(10000, 'EUR'), unit: 't')],
+        new QuoteContext($this->geo->find(new CountryCode('DK')), CustomerType::Consumer, $this->seller->toSellerRegistrations()),
+    );
+    $invoice = $this->app->make(Invoicer::class)
+        ->issue($quote, $this->seller, 'acme', new DateTimeImmutable('2025-09-01'));
+
+    $refund = $this->refunder()->refund(fullRefund('rf_qty', $invoice));
+
+    expect($refund->creditNote->lines[0]->quantity->toDecimalString())->toBe('12.500')
+        ->and($refund->creditNote->lines[0]->unit)->toBe('t');
 });

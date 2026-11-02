@@ -65,7 +65,7 @@ readonly class DefaultQuoteBuilder implements QuoteBuilder
         $gross = Money::zero($currency);
 
         foreach ($lines as $line) {
-            $lineAmount = $line->unitAmount->multipliedBy($line->quantity);
+            $lineAmount = $line->unitAmount->times($line->quantity);
 
             $assessment = $this->tax->assess(new TaxQuery(
                 amount: $lineAmount->toBrick(),
@@ -90,6 +90,7 @@ readonly class DefaultQuoteBuilder implements QuoteBuilder
                 $assessment->treatment,
                 $assessment->rate !== null ? (string) $assessment->rate->percentage : null,
                 $assessment->reason,
+                $line->unit,
             );
 
             $net = $net->plus($lineNet);
@@ -116,7 +117,7 @@ readonly class DefaultQuoteBuilder implements QuoteBuilder
         $net = Money::zero($currency);
 
         foreach ($lines as $line) {
-            $lineNet = $line->unitAmount->multipliedBy($line->quantity);
+            $lineNet = $line->unitAmount->times($line->quantity);
 
             $quoteLines[] = new QuoteLine(
                 $line->description,
@@ -127,6 +128,7 @@ readonly class DefaultQuoteBuilder implements QuoteBuilder
                 null,
                 null,
                 'Tax is calculated once the address / jurisdiction is resolved.',
+                $line->unit,
             );
 
             $net = $net->plus($lineNet);
