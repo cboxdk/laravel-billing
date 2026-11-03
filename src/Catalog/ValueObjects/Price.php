@@ -6,6 +6,8 @@ namespace Cbox\Billing\Catalog\ValueObjects;
 
 use Cbox\Billing\Catalog\Enums\PriceKind;
 use Cbox\Billing\Catalog\Enums\PricingModel;
+use Cbox\Billing\Catalog\Exceptions\MalformedPercentagePrice;
+use Cbox\Billing\Catalog\Pricing\PercentageCalculator;
 use Cbox\Billing\Catalog\Pricing\TierCalculator;
 use Cbox\Billing\Money\Money;
 use DateTimeImmutable;
@@ -26,6 +28,7 @@ readonly class Price
     /**
      * @param  list<PriceTier>  $tiers  ordered brackets for a tiered model; empty for flat/per-unit
      * @param  ?int  $packageSize  block size for {@see PricingModel::Package}
+     * @param  ?PercentagePrice  $percentage  the terms of a {@see PricingModel::Percentage} price
      */
     public function __construct(
         public string $id,
@@ -38,6 +41,7 @@ readonly class Price
         public PriceKind $kind = PriceKind::Standard,
         public array $tiers = [],
         public ?int $packageSize = null,
+        public ?PercentagePrice $percentage = null,
     ) {}
 
     public function isEffectiveAt(DateTimeImmutable $at): bool
@@ -56,14 +60,34 @@ readonly class Price
      * The charge for `$quantity` units under this price's {@see PricingModel}. Flat is
      * the unit amount once; per-unit is `unitAmount × quantity`; the tiered models are
      * computed from `$tiers` by {@see TierCalculator}, remainder-safe and
-     * deny-by-default on a malformed tier set.
+     * deny-by-default on a malformed tier set. A percentage price reads the quantity
+     * as the period's volume in minor units and charges its rate, with no fee units;
+     * use {@see PercentageCalculator::charge()} for fees and the full breakdown.
      */
     public function amountFor(int $quantity): Money
     {
+        if ($this->model->isPercentage()) {
+            return (new PercentageCalculator)->charge($this->percentageTerms(), $quantity)->total;
+        }
+
         if ($this->model->isTiered()) {
             return (new TierCalculator)->price($this->model, $this->tiers, $quantity, $this->packageSize);
         }
 
         return $this->unitAmount->multipliedBy($this->billableQuantity($quantity));
+    }
+
+    /** The percentage terms, checked against the price's own currency. */
+    public function percentageTerms(): PercentagePrice
+    {
+        if ($this->percentage === null) {
+            throw MalformedPercentagePrice::missingTerms($this->id);
+        }
+
+        if ($this->percentage->currency !== $this->unitAmount->currency()) {
+            throw MalformedPercentagePrice::currencyMismatch($this->unitAmount->currency(), $this->percentage->currency);
+        }
+
+        return $this->percentage;
     }
 }

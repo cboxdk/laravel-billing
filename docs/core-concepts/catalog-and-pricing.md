@@ -37,6 +37,7 @@ scalar models; the four **tiered** models price against an ordered list of
 | `Volume` | **all** units are priced at the single tier the **total** quantity lands in (a retroactive volume discount) |
 | `Package` | `ceil(quantity ÷ packageSize)` whole blocks, each charged the block's flat price (buy in packs of N) |
 | `Stairstep` | a single flat amount for the whole bracket the quantity lands in |
+| `Percentage` | a rate of a reported value, with optional fixed fee, minimum, maximum and tiers by volume ([below](#percentage-prices)) |
 
 A `PriceTier` is `{ ?int upTo, Money unitAmount, ?Money flatAmount }`: `upTo` is the
 tier's inclusive upper bound in units (`null` marks the final, unbounded tier),
@@ -69,6 +70,40 @@ through the same call as a flat one; `Price::amountFor()` does the same for a `P
 in hand. Tiered pricing composes with metering: a meter's aggregated billable
 quantity (see [Metering → billable-metric aggregations](metering.md#billable-metric-aggregations))
 feeds straight into `amountFor()`.
+
+### Percentage prices
+
+`PricingModel::Percentage` charges a rate of a reported value, such as 1.5% of the
+transaction volume a meter sums. Its terms are a `PercentagePrice` on the `Price`:
+
+| Term | Meaning |
+| --- | --- |
+| `tiers` | the rate by volume, as `PercentageTier { ?int upTo, PercentageRate rate }`; one unbounded tier is a single rate |
+| `tierMode` | `Graduated` charges each slice of volume at its own tier's rate; `Volume` charges all of it at the tier the total lands in |
+| `fixedFee` | an optional amount per fee unit: an event, or a unit the writer counts |
+| `minimum` / `maximum` | an optional least charge and cap per period |
+
+A `PercentageRate` holds a percentage exactly, as parts per million (`ofPercent('1.5')`
+is 15,000), with at most four decimals and at most 100%. The volume and the tier bounds
+are in the price currency's minor units.
+
+```php
+$terms = new PercentagePrice('DKK', [new PercentageTier(null, PercentageRate::ofPercent('1.5'))],
+    fixedFee: Money::ofMinor(100, 'DKK'), minimum: Money::ofMinor(5_000, 'DKK'));
+
+$charge = (new PercentageCalculator)->charge($terms, volume: 123_457, feeUnits: 3);
+// 1.5% of 1,234.57 = 18.51855, plus 3 × 1.00 = 21.51855 → 21.52, below the minimum → 50.00
+$charge->total;  // 5000 DKK minor
+$charge->bound;  // 'minimum'
+```
+
+`PercentageCalculator` sums every term exactly and rounds the total **once**, half up,
+to a whole minor unit. It never rounds per event or per slice, so many small amounts
+cannot each round away to zero. The minimum and maximum then bound the rounded total. A
+period with no volume and no fee units is charged nothing, minimum included. Malformed
+terms (no tier, tiers out of order, an amount in another currency or below zero, a minimum
+above the maximum) raise `MalformedPercentagePrice` when the `PercentagePrice` is built.
+`Price::amountFor($volume)` charges a percentage price with no fee units.
 
 ## Product shapes (ADR-0015)
 
