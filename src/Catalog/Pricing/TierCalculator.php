@@ -52,7 +52,7 @@ class TierCalculator
             PricingModel::Volume => $this->volume($tiers, $quantity, $currency),
             PricingModel::Package => $this->package($tiers, $quantity, $packageSize, $currency),
             PricingModel::Stairstep => $this->stairstep($tiers, $quantity, $currency),
-            PricingModel::Flat, PricingModel::PerUnit => throw MalformedTierSet::notTiered($model),
+            PricingModel::Flat, PricingModel::PerUnit, PricingModel::Percentage => throw MalformedTierSet::notTiered($model),
         };
     }
 
