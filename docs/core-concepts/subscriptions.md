@@ -115,6 +115,39 @@ thereafter, with no per-period scheduling. It composes with `scheduleChange`
 (price-id changes) independently: the ramp drives the recurring *amount* by index,
 scheduled changes re-pin the *price id*.
 
+## Billing cycles and intervals
+
+A `BillingCycle` produces the half-open `[start, end)` period a subscription is in. It
+runs every `intervalCount` units of a `BillingInterval`: `Monthly`, `Yearly`, `Weekly`
+or `Daily`. `BillingFrequency` pairs the unit with the count and names it by one durable
+key: `month`, `year`, `week`, `day`, or `{count}-{unit}` such as `3-month` or `2-week`.
+
+```php
+BillingFrequency::quarterly();                         // 3-month
+BillingFrequency::semiAnnually();                      // 6-month
+BillingFrequency::of(BillingInterval::Weekly, 2);      // 2-week
+BillingFrequency::fromKey('quarterly')->key();         // 3-month
+BillingFrequency::fromKey('12-month')->key();          // year: equal spans fold
+
+$cycle = BillingCycle::anchoredOnSignup($signup, BillingFrequency::quarterly());
+$cycle->periodContaining($now);                        // [Jan 31, Apr 30) for a Jan 31 signup
+```
+
+- Month-based cycles keep the month-end clamp: a Jan 31 quarterly signup bills
+  Jan 31, Apr 30, Jul 31, Oct 31.
+- Week- and day-based cycles count whole local days from the anchor date, so every
+  boundary is local midnight, also across a daylight-saving change.
+- When the anchor month cannot fix the phase on its own (a day-based cycle, every five
+  months, every two years), the cycle carries `anchorYear`. `anchoredOnSignup()` and
+  `calendarFirst()` set it for you. A plain monthly or yearly cycle leaves it `null`,
+  exactly as before.
+- `calendarFirst()` pins quarterly cycles to calendar quarters and weekly cycles to
+  Monday.
+- A cycle spans at most three years. Use a commitment term for longer contracts.
+- `monthlyShare()` returns one cycle's share of a month as an exact fraction, for
+  normalising recurring revenue. `cadence()` returns the matching `GrantCadence`, or
+  `null` when there is none (every two weeks).
+
 ## Minimum commitments & true-up
 
 A `MinimumCommitment` is a minimum spend per billing period. At period close, if the
