@@ -29,14 +29,27 @@ use InvalidArgumentException;
  * Boundaries are tracked as (year, month) anchor pairs and materialised through the
  * clamp on demand, so the true anchor day is never lost to an intermediate clamped
  * value — the drift the ADR rejects.
+ *
+ * A cycle runs every `intervalCount` units ({@see BillingFrequency}): a quarterly cycle
+ * is three months, keeping the same clamp, so a Jan 31 anchor bills Jan 31 → Apr 30 →
+ * Jul 31. A weekly or daily cycle counts whole days from its anchor date on local
+ * midnight in the zone, so a daylight-saving change never moves a boundary off midnight.
+ * Where the anchor month alone cannot fix the cycle's phase (a day-based cycle, every
+ * five months, every two years) the cycle also carries the `anchorYear`; for a plain
+ * monthly or yearly cycle it stays null, exactly as before.
  */
 readonly class BillingCycle
 {
+    /** The year a calendar-pinned cycle counts from when its phase needs one: 2001-01-01 is a Monday. */
+    private const int CALENDAR_EPOCH_YEAR = 2001;
+
     public function __construct(
         public int $anchorDay,
         public int $anchorMonth,
         public BillingInterval $interval,
         public DateTimeZone $zone,
+        public int $intervalCount = 1,
+        public ?int $anchorYear = null,
     ) {
         if ($anchorDay < 1 || $anchorDay > 31) {
             throw new InvalidArgumentException("Billing anchor day must be 1–31, got {$anchorDay}.");
@@ -45,6 +58,18 @@ readonly class BillingCycle
         if ($anchorMonth < 1 || $anchorMonth > 12) {
             throw new InvalidArgumentException("Billing anchor month must be 1–12, got {$anchorMonth}.");
         }
+
+        $frequency = new BillingFrequency($interval, $intervalCount);
+
+        if ($anchorYear === null && self::needsAnchorYear($frequency)) {
+            throw new InvalidArgumentException("A billing cycle every {$frequency->key()} needs its anchor year.");
+        }
+    }
+
+    /** How often this cycle bills: its unit and count, with equal spans folded. */
+    public function frequency(): BillingFrequency
+    {
+        return new BillingFrequency($this->interval, $this->intervalCount);
     }
 
     /**
@@ -54,28 +79,43 @@ readonly class BillingCycle
      */
     public static function anchoredOnSignup(
         DateTimeImmutable $signupAt,
-        BillingInterval $interval,
+        BillingInterval|BillingFrequency $interval,
         DateTimeZone $zone = new DateTimeZone('UTC'),
     ): self {
         $local = $signupAt->setTimezone($zone);
+        $frequency = $interval instanceof BillingFrequency ? $interval : new BillingFrequency($interval);
 
         return new self(
             anchorDay: (int) $local->format('j'),
             anchorMonth: (int) $local->format('n'),
-            interval: $interval,
+            interval: $frequency->interval,
             zone: $zone,
+            intervalCount: $frequency->count,
+            anchorYear: self::needsAnchorYear($frequency) ? (int) $local->format('Y') : null,
         );
     }
 
     /**
      * Pin the cycle to the **calendar 1st** — every subscription on the plan renews
-     * together on the 1st (of January, for a yearly cycle), regardless of signup day.
+     * together on the 1st (of January, for a yearly cycle; of January, April, July and
+     * October for a quarterly one), regardless of signup day. A weekly cycle renews
+     * together on Monday, the ISO week start; a cycle whose phase needs a year counts
+     * from January 1, 2001, a Monday.
      */
     public static function calendarFirst(
-        BillingInterval $interval,
+        BillingInterval|BillingFrequency $interval,
         DateTimeZone $zone = new DateTimeZone('UTC'),
     ): self {
-        return new self(anchorDay: 1, anchorMonth: 1, interval: $interval, zone: $zone);
+        $frequency = $interval instanceof BillingFrequency ? $interval : new BillingFrequency($interval);
+
+        return new self(
+            anchorDay: 1,
+            anchorMonth: 1,
+            interval: $frequency->interval,
+            zone: $zone,
+            intervalCount: $frequency->count,
+            anchorYear: self::needsAnchorYear($frequency) ? self::CALENDAR_EPOCH_YEAR : null,
+        );
     }
 
     /**
@@ -85,7 +125,7 @@ readonly class BillingCycle
     public static function forAnchor(
         CycleAnchor $anchor,
         DateTimeImmutable $signupAt,
-        BillingInterval $interval,
+        BillingInterval|BillingFrequency $interval,
         DateTimeZone $zone = new DateTimeZone('UTC'),
     ): self {
         return match ($anchor) {
@@ -102,6 +142,14 @@ readonly class BillingCycle
     public function periodContaining(DateTimeImmutable $at): BillingPeriod
     {
         $local = $at->setTimezone($this->zone);
+
+        if ($this->interval->isDayBased()) {
+            return $this->dayPeriod($local);
+        }
+
+        if ($this->intervalCount > 1) {
+            return $this->multiMonthPeriod($local);
+        }
 
         return $this->interval === BillingInterval::Monthly
             ? $this->monthlyPeriod($local)
@@ -146,6 +194,75 @@ readonly class BillingCycle
         }
 
         return new BillingPeriod($start, $this->anchorFor($year + 1, $this->anchorMonth));
+    }
+
+    /**
+     * Every N months: the boundaries are the anchor day of every N-th month counted from
+     * the anchor month (and year, when the phase needs it), each through the clamp.
+     */
+    private function multiMonthPeriod(DateTimeImmutable $local): BillingPeriod
+    {
+        $step = $this->frequency()->months();
+        $anchorIndex = ($this->anchorYear ?? 0) * 12 + $this->anchorMonth - 1;
+        $index = (int) $local->format('Y') * 12 + (int) $local->format('n') - 1;
+
+        $index -= self::modulo($index - $anchorIndex, $step);
+        $start = $this->anchorAtIndex($index);
+        if ($start > $local) {
+            $index -= $step;
+            $start = $this->anchorAtIndex($index);
+        }
+
+        return new BillingPeriod($start, $this->anchorAtIndex($index + $step));
+    }
+
+    /**
+     * Every N days or weeks: whole local days counted from the anchor date, so every
+     * boundary is local midnight however long the day around a clock change was.
+     */
+    private function dayPeriod(DateTimeImmutable $local): BillingPeriod
+    {
+        $step = $this->frequency()->days();
+        $anchor = $this->anchorFor($this->anchorYear ?? self::CALENDAR_EPOCH_YEAR, $this->anchorMonth);
+
+        $elapsed = self::dayNumber($local) - self::dayNumber($anchor);
+        $offset = $elapsed - self::modulo($elapsed, $step);
+
+        return new BillingPeriod($this->daysAfter($anchor, $offset), $this->daysAfter($anchor, $offset + $step));
+    }
+
+    /** Local midnight `$days` calendar days after the anchor date. */
+    private function daysAfter(DateTimeImmutable $anchor, int $days): DateTimeImmutable
+    {
+        return new DateTimeImmutable(
+            gmdate('Y-m-d', (self::dayNumber($anchor) + $days) * 86_400).' 00:00:00',
+            $this->zone,
+        );
+    }
+
+    /** The local calendar date as a count of days since 1970-01-01, free of the zone offset. */
+    private static function dayNumber(DateTimeImmutable $local): int
+    {
+        return intdiv((int) gmmktime(0, 0, 0, (int) $local->format('n'), (int) $local->format('j'), (int) $local->format('Y')), 86_400);
+    }
+
+    private function anchorAtIndex(int $index): DateTimeImmutable
+    {
+        return $this->anchorFor(intdiv($index, 12), $index % 12 + 1);
+    }
+
+    private static function modulo(int $value, int $divisor): int
+    {
+        return (($value % $divisor) + $divisor) % $divisor;
+    }
+
+    /**
+     * Whether the anchor month alone cannot fix the cycle's phase: a day-based cycle, or a
+     * month step that does not divide a year (every five months, every two years).
+     */
+    private static function needsAnchorYear(BillingFrequency $frequency): bool
+    {
+        return $frequency->isDayBased() || 12 % $frequency->months() !== 0;
     }
 
     /**
