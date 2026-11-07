@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.11.2] — prepared candidate, not published
+## [0.11.2] - 2026-11-07
 
 ### Changes
 
