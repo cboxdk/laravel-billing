@@ -1,0 +1,11 @@
+{
+  "upstream_head": "339efc814faa960c986e3a3bf7d7e91c1f4fe0f8",
+  "upstream_branch": "main",
+  "target_version": "0.11.2",
+  "status": "unpublished candidate based on actual upstream history",
+  "source_manifest": "evidence/laravel-billing-final-source-hashes.json",
+  "publication_parent": "339efc814faa960c986e3a3bf7d7e91c1f4fe0f8",
+  "restored_public_files": [
+    "BUILD-STATUS.md"
+  ]
+}
