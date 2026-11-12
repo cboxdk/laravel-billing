@@ -1,7 +1,7 @@
 {
     "bomFormat": "CycloneDX",
     "specVersion": "1.5",
-    "serialNumber": "urn:uuid:02be12ca-59a0-4ea4-bf67-c0dbde6c8a54",
+    "serialNumber": "urn:uuid:b5c485c4-6d9a-4862-8e57-368a3332cd22",
     "version": 1,
     "metadata": {
         "tools": [
@@ -85,11 +85,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/cboxdk/laravel-tax@0.18.0-RC.1",
+            "bom-ref": "pkg:composer/cboxdk/laravel-tax@v0.19.0",
             "group": "cboxdk",
             "name": "laravel-tax",
-            "version": "0.18.0-RC.1",
-            "purl": "pkg:composer/cboxdk/laravel-tax@0.18.0-RC.1",
+            "version": "v0.19.0",
+            "purl": "pkg:composer/cboxdk/laravel-tax@v0.19.0",
             "description": "Cbox Tax \u2014 a self-hostable consumption-tax engine for Laravel: it owns the calculation logic (place-of-supply, reverse-charge, rate application, inclusive/exclusive) per jurisdiction and sources rate and rule data through pluggable contracts.",
             "licenses": [
                 {
@@ -181,11 +181,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/doctrine/deprecations@1.1.6",
+            "bom-ref": "pkg:composer/doctrine/deprecations@1.2.0",
             "group": "doctrine",
             "name": "deprecations",
-            "version": "1.1.6",
-            "purl": "pkg:composer/doctrine/deprecations@1.1.6",
+            "version": "1.2.0",
+            "purl": "pkg:composer/doctrine/deprecations@1.2.0",
             "description": "A small layer on top of trigger_error(E_USER_DEPRECATED) or PSR-3 logging with options to disable all deprecations or selectively for packages.",
             "licenses": [
                 {
@@ -309,11 +309,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/guzzlehttp/guzzle@8.3.1",
+            "bom-ref": "pkg:composer/guzzlehttp/guzzle@8.4.0",
             "group": "guzzlehttp",
             "name": "guzzle",
-            "version": "8.3.1",
-            "purl": "pkg:composer/guzzlehttp/guzzle@8.3.1",
+            "version": "8.4.0",
+            "purl": "pkg:composer/guzzlehttp/guzzle@8.4.0",
             "description": "Guzzle is a PHP HTTP client library",
             "licenses": [
                 {
@@ -341,11 +341,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/guzzlehttp/psr7@3.2.0",
+            "bom-ref": "pkg:composer/guzzlehttp/psr7@3.3.0",
             "group": "guzzlehttp",
             "name": "psr7",
-            "version": "3.2.0",
-            "purl": "pkg:composer/guzzlehttp/psr7@3.2.0",
+            "version": "3.3.0",
+            "purl": "pkg:composer/guzzlehttp/psr7@3.3.0",
             "description": "PSR-7 message implementation that also provides common utility methods",
             "licenses": [
                 {
@@ -373,11 +373,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/laravel/framework@v13.40.0",
+            "bom-ref": "pkg:composer/laravel/framework@v13.42.0",
             "group": "laravel",
             "name": "framework",
-            "version": "v13.40.0",
-            "purl": "pkg:composer/laravel/framework@v13.40.0",
+            "version": "v13.42.0",
+            "purl": "pkg:composer/laravel/framework@v13.42.0",
             "description": "The Laravel Framework.",
             "licenses": [
                 {
@@ -389,11 +389,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/laravel/prompts@v0.3.26",
+            "bom-ref": "pkg:composer/laravel/prompts@v0.3.27",
             "group": "laravel",
             "name": "prompts",
-            "version": "v0.3.26",
-            "purl": "pkg:composer/laravel/prompts@v0.3.26",
+            "version": "v0.3.27",
+            "purl": "pkg:composer/laravel/prompts@v0.3.27",
             "description": "Add beautiful and user-friendly forms to your command-line applications.",
             "licenses": [
                 {
@@ -405,11 +405,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/laravel/serializable-closure@v2.1.0",
+            "bom-ref": "pkg:composer/laravel/serializable-closure@v2.2.0",
             "group": "laravel",
             "name": "serializable-closure",
-            "version": "v2.1.0",
-            "purl": "pkg:composer/laravel/serializable-closure@v2.1.0",
+            "version": "v2.2.0",
+            "purl": "pkg:composer/laravel/serializable-closure@v2.2.0",
             "description": "Laravel Serializable Closure provides an easy and secure way to serialize closures in PHP.",
             "licenses": [
                 {
