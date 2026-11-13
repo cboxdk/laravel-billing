@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.11.4] - 2026-11-13
+
 ### Changes
 
 The laravel-tax constraint now allows 0.20 and 0.21 (`^0.17 || ^0.18 || ^0.19 || ^0.20 || ^0.21`). Tax 0.20 adds an opt-in trusted redirect for register downloads, and 0.21 reads register schema 2.8 (a share of the price, `TaxRate::$taxableShare`). Both are additive: nothing the engine calls changed, so the engine runtime is unchanged from 0.11.3.
