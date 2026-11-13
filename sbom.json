@@ -1,7 +1,7 @@
 {
     "bomFormat": "CycloneDX",
     "specVersion": "1.5",
-    "serialNumber": "urn:uuid:b5c485c4-6d9a-4862-8e57-368a3332cd22",
+    "serialNumber": "urn:uuid:8b0490cd-fee5-4739-bc8e-ed7a93523bd5",
     "version": 1,
     "metadata": {
         "tools": [
@@ -85,11 +85,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/cboxdk/laravel-tax@v0.19.0",
+            "bom-ref": "pkg:composer/cboxdk/laravel-tax@v0.21.0",
             "group": "cboxdk",
             "name": "laravel-tax",
-            "version": "v0.19.0",
-            "purl": "pkg:composer/cboxdk/laravel-tax@v0.19.0",
+            "version": "v0.21.0",
+            "purl": "pkg:composer/cboxdk/laravel-tax@v0.21.0",
             "description": "Cbox Tax \u2014 a self-hostable consumption-tax engine for Laravel: it owns the calculation logic (place-of-supply, reverse-charge, rate application, inclusive/exclusive) per jurisdiction and sources rate and rule data through pluggable contracts.",
             "licenses": [
                 {
@@ -309,11 +309,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/guzzlehttp/guzzle@8.4.0",
+            "bom-ref": "pkg:composer/guzzlehttp/guzzle@8.5.0",
             "group": "guzzlehttp",
             "name": "guzzle",
-            "version": "8.4.0",
-            "purl": "pkg:composer/guzzlehttp/guzzle@8.4.0",
+            "version": "8.5.0",
+            "purl": "pkg:composer/guzzlehttp/guzzle@8.5.0",
             "description": "Guzzle is a PHP HTTP client library",
             "licenses": [
                 {
@@ -341,11 +341,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/guzzlehttp/psr7@3.3.0",
+            "bom-ref": "pkg:composer/guzzlehttp/psr7@3.4.0",
             "group": "guzzlehttp",
             "name": "psr7",
-            "version": "3.3.0",
-            "purl": "pkg:composer/guzzlehttp/psr7@3.3.0",
+            "version": "3.4.0",
+            "purl": "pkg:composer/guzzlehttp/psr7@3.4.0",
             "description": "PSR-7 message implementation that also provides common utility methods",
             "licenses": [
                 {
