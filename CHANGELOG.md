@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.11.5] - 2026-11-14
+
+### Changes
+
+The laravel-tax constraint now allows 0.22 (`^0.17 || ^0.18 || ^0.19 || ^0.20 || ^0.21 || ^0.22`). Tax 0.22 reads the rest of register schema 2.8: separate state levies (admissions, communications, lodging) added as their own tax lines beside the sales tax, `read_unstated` records, and the new Hawaii and Connecticut remote-seller obligation dates. Additive for this package: the only signature changes are a trailing optional `taxType` on breakdown, component and authority value objects, none of which the engine constructs, so the engine runtime is unchanged from 0.11.4.
+
 ## [0.11.4] - 2026-11-13
 
 ### Changes

@@ -17,7 +17,7 @@
         "php": "^8.4",
         "brick/money": "^0.14",
         "cboxdk/laravel-geo": "^0.6",
-        "cboxdk/laravel-tax": "^0.17 || ^0.18 || ^0.19 || ^0.20 || ^0.21",
+        "cboxdk/laravel-tax": "^0.17 || ^0.18 || ^0.19 || ^0.20 || ^0.21 || ^0.22",
         "cboxdk/license": "^0.1",
         "illuminate/cache": "^13.0",
         "illuminate/contracts": "^13.0",
