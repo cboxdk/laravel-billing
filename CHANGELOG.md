@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.11.6] - 2026-11-23
+
+### Changes
+
+The laravel-tax constraint now allows 0.23 (`^0.17 || ^0.18 || ^0.19 || ^0.20 || ^0.21 || ^0.22 || ^0.23`). Tax 0.23 adds the margin scheme and the EU small-business exemption, and a `TaxTreatment::MarginScheme` case. The engine never matches on `TaxTreatment`, so nothing here changes; a host with an exhaustive `match` over it needs the new arm.
+
 ## [0.11.5] - 2026-11-14
 
 ### Changes
