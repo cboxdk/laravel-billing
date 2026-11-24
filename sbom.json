@@ -1,7 +1,7 @@
 {
     "bomFormat": "CycloneDX",
     "specVersion": "1.5",
-    "serialNumber": "urn:uuid:919d3430-886a-413b-9bf1-bfb47fc67eb3",
+    "serialNumber": "urn:uuid:7d377ce1-a7e8-4c13-9061-f3798785709f",
     "version": 1,
     "metadata": {
         "tools": [
@@ -69,11 +69,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/cboxdk/laravel-geo@v0.6.1",
+            "bom-ref": "pkg:composer/cboxdk/laravel-geo@v0.6.3",
             "group": "cboxdk",
             "name": "laravel-geo",
-            "version": "v0.6.1",
-            "purl": "pkg:composer/cboxdk/laravel-geo@v0.6.1",
+            "version": "v0.6.3",
+            "purl": "pkg:composer/cboxdk/laravel-geo@v0.6.3",
             "description": "Cbox Geo \u2014 a canonical ISO 3166 country/subdivision and ISO 4217 currency reference for Laravel: data-driven jurisdiction lookups and structured addresses bound to stable codes, carrying the tax-relevant attributes downstream billing and tax engines need.",
             "licenses": [
                 {
@@ -85,11 +85,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/cboxdk/laravel-tax@v0.22.0",
+            "bom-ref": "pkg:composer/cboxdk/laravel-tax@v0.23.0",
             "group": "cboxdk",
             "name": "laravel-tax",
-            "version": "v0.22.0",
-            "purl": "pkg:composer/cboxdk/laravel-tax@v0.22.0",
+            "version": "v0.23.0",
+            "purl": "pkg:composer/cboxdk/laravel-tax@v0.23.0",
             "description": "Cbox Tax \u2014 a self-hostable consumption-tax engine for Laravel: it owns the calculation logic (place-of-supply, reverse-charge, rate application, inclusive/exclusive) per jurisdiction and sources rate and rule data through pluggable contracts.",
             "licenses": [
                 {
@@ -133,11 +133,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/commerceguys/addressing@v2.3.2",
+            "bom-ref": "pkg:composer/commerceguys/addressing@v2.3.3",
             "group": "commerceguys",
             "name": "addressing",
-            "version": "v2.3.2",
-            "purl": "pkg:composer/commerceguys/addressing@v2.3.2",
+            "version": "v2.3.3",
+            "purl": "pkg:composer/commerceguys/addressing@v2.3.3",
             "description": "Addressing library powered by CLDR and Google's address data.",
             "licenses": [
                 {
@@ -165,11 +165,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/doctrine/collections@3.1.0",
+            "bom-ref": "pkg:composer/doctrine/collections@3.1.1",
             "group": "doctrine",
             "name": "collections",
-            "version": "3.1.0",
-            "purl": "pkg:composer/doctrine/collections@3.1.0",
+            "version": "3.1.1",
+            "purl": "pkg:composer/doctrine/collections@3.1.1",
             "description": "PHP Doctrine Collections library that adds additional functionality on top of PHP arrays.",
             "licenses": [
                 {
@@ -245,11 +245,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/egulias/email-validator@4.0.4",
+            "bom-ref": "pkg:composer/egulias/email-validator@4.0.5",
             "group": "egulias",
             "name": "email-validator",
-            "version": "4.0.4",
-            "purl": "pkg:composer/egulias/email-validator@4.0.4",
+            "version": "4.0.5",
+            "purl": "pkg:composer/egulias/email-validator@4.0.5",
             "description": "A library for validating emails against several RFCs",
             "licenses": [
                 {
@@ -261,11 +261,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/firebase/php-jwt@v7.2.1",
+            "bom-ref": "pkg:composer/firebase/php-jwt@v7.2.2",
             "group": "firebase",
             "name": "php-jwt",
-            "version": "v7.2.1",
-            "purl": "pkg:composer/firebase/php-jwt@v7.2.1",
+            "version": "v7.2.2",
+            "purl": "pkg:composer/firebase/php-jwt@v7.2.2",
             "description": "A simple library to encode and decode JSON Web Tokens (JWT) in PHP. Should conform to the current spec.",
             "licenses": [
                 {
@@ -309,11 +309,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/guzzlehttp/guzzle@8.5.0",
+            "bom-ref": "pkg:composer/guzzlehttp/guzzle@8.6.0",
             "group": "guzzlehttp",
             "name": "guzzle",
-            "version": "8.5.0",
-            "purl": "pkg:composer/guzzlehttp/guzzle@8.5.0",
+            "version": "8.6.0",
+            "purl": "pkg:composer/guzzlehttp/guzzle@8.6.0",
             "description": "Guzzle is a PHP HTTP client library",
             "licenses": [
                 {
@@ -325,11 +325,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/guzzlehttp/promises@3.1.0",
+            "bom-ref": "pkg:composer/guzzlehttp/promises@3.2.0",
             "group": "guzzlehttp",
             "name": "promises",
-            "version": "3.1.0",
-            "purl": "pkg:composer/guzzlehttp/promises@3.1.0",
+            "version": "3.2.0",
+            "purl": "pkg:composer/guzzlehttp/promises@3.2.0",
             "description": "Guzzle promises library",
             "licenses": [
                 {
@@ -341,11 +341,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/guzzlehttp/psr7@3.4.0",
+            "bom-ref": "pkg:composer/guzzlehttp/psr7@3.6.0",
             "group": "guzzlehttp",
             "name": "psr7",
-            "version": "3.4.0",
-            "purl": "pkg:composer/guzzlehttp/psr7@3.4.0",
+            "version": "3.6.0",
+            "purl": "pkg:composer/guzzlehttp/psr7@3.6.0",
             "description": "PSR-7 message implementation that also provides common utility methods",
             "licenses": [
                 {
@@ -373,11 +373,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/laravel/framework@v13.42.0",
+            "bom-ref": "pkg:composer/laravel/framework@v13.43.0",
             "group": "laravel",
             "name": "framework",
-            "version": "v13.42.0",
-            "purl": "pkg:composer/laravel/framework@v13.42.0",
+            "version": "v13.43.0",
+            "purl": "pkg:composer/laravel/framework@v13.43.0",
             "description": "The Laravel Framework.",
             "licenses": [
                 {
@@ -533,11 +533,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/monolog/monolog@3.12.1",
+            "bom-ref": "pkg:composer/monolog/monolog@3.13.0",
             "group": "monolog",
             "name": "monolog",
-            "version": "3.12.1",
-            "purl": "pkg:composer/monolog/monolog@3.12.1",
+            "version": "3.13.0",
+            "purl": "pkg:composer/monolog/monolog@3.13.0",
             "description": "Sends your logs to files, sockets, inboxes, databases and various web services",
             "licenses": [
                 {
@@ -769,11 +769,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/ramsey/uuid@4.9.4",
+            "bom-ref": "pkg:composer/ramsey/uuid@4.10.0",
             "group": "ramsey",
             "name": "uuid",
-            "version": "4.9.4",
-            "purl": "pkg:composer/ramsey/uuid@4.9.4",
+            "version": "4.10.0",
+            "purl": "pkg:composer/ramsey/uuid@4.10.0",
             "description": "A PHP library for generating and working with universally unique identifiers (UUIDs).",
             "licenses": [
                 {
@@ -1105,11 +1105,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/symfony/polyfill-php85@v1.43.0",
+            "bom-ref": "pkg:composer/symfony/polyfill-php85@v1.44.0",
             "group": "symfony",
             "name": "polyfill-php85",
-            "version": "v1.43.0",
-            "purl": "pkg:composer/symfony/polyfill-php85@v1.43.0",
+            "version": "v1.44.0",
+            "purl": "pkg:composer/symfony/polyfill-php85@v1.44.0",
             "description": "Symfony polyfill backporting some PHP 8.5+ features to lower PHP versions",
             "licenses": [
                 {
@@ -1313,11 +1313,11 @@
         },
         {
             "type": "library",
-            "bom-ref": "pkg:composer/vlucas/phpdotenv@v5.8.0",
+            "bom-ref": "pkg:composer/vlucas/phpdotenv@v5.8.1",
             "group": "vlucas",
             "name": "phpdotenv",
-            "version": "v5.8.0",
-            "purl": "pkg:composer/vlucas/phpdotenv@v5.8.0",
+            "version": "v5.8.1",
+            "purl": "pkg:composer/vlucas/phpdotenv@v5.8.1",
             "description": "Loads environment variables from `.env` to `$_ENV` and `$_SERVER` automagically, and optionally to `getenv()`.",
             "licenses": [
                 {
